@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Select, MenuItem, TextField, Button, Typography, InputLabel, FormControl, FilledInput, InputAdornment } from '@mui/material';
 
-import DistanceMatrix from './components/distanceMatrix';
+import NeutralInput from './components/neutralInput';
 import ConductorInput from './components/conductorInput';
+import DistanceMatrix from './components/distanceMatrix';
 
 import './App.css';
 
@@ -12,6 +13,9 @@ const permeability_of_free_space = 4 * Math.PI * 0.0000001; // H/m
 const permissivity_free_space = 8.854*0.000000000001; // F/m
 
 function App() {
+  const [neutralIndex, setNeutralIndex] = useState(null); // Neutral conductor index
+  const [neutralProperty, setNeutralProperty] = useState(0); // Neutral conductor property index
+
   const [conductorIndices, setConductorIndices] = useState([0, 0, 0]);
   const [propertyIndices, setPropertyIndices] = useState([0, 0, 0]);
 
@@ -70,6 +74,20 @@ function App() {
   return (
     <Box className="App" sx={{ p: 4 }}>
       <Typography variant="h4" gutterBottom>Geometric Mean Distance Calculator</Typography>
+
+      <NeutralInput
+        neutralIndex={neutralIndex}
+        setNeutralIndex={setNeutralIndex}
+        neutralProperty={neutralProperty}
+        setNeutralProperty={setNeutralProperty}
+      />
+
+      <Typography variant="h5" gutterBottom>Neut Vals</Typography>
+      <Typography variant="body1">
+        Neutral Conductor: {neutralIndex !== null ? conductorData[neutralIndex]?.name : 'None'} 
+        {neutralIndex !== null ? ` (${conductorProperties[neutralProperty]?.type})` : ''}
+      </Typography>
+
       <ConductorInput
         conductorIndices={conductorIndices}
         setConductorIndices={setConductorIndices}
@@ -80,6 +98,7 @@ function App() {
         gmd={gmd}
         setGmd={setGmd}
         conductorIndices={conductorIndices}
+        neutralIndex={neutralIndex}
       />
 
       <FilledInput

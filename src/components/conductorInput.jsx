@@ -5,14 +5,16 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import { conductorProperties, conductorData } from '../data/conductorData';
 
+const phaseLabel  = ['A', 'B', 'C', 'D'];
+
 function ConductorInput({
   conductorIndices, setConductorIndices,
   propertyIndices, setPropertyIndices
 }) {
 
-  // Add a new conductor row (max 4)
+  // Add a new conductor row (max 3)
   const handleAddConductor = () => {
-    if (conductorIndices.length < 4) {
+    if (conductorIndices.length < 3) {
       setConductorIndices([...conductorIndices, 0]);
       setPropertyIndices([...propertyIndices, 0]);
     }
@@ -64,7 +66,7 @@ function ConductorInput({
               <RemoveCircleOutlineIcon />
             </IconButton>
             <FormControl sx={{ mr: 2, minWidth: 180 }}>
-              <InputLabel id={conductorLabelId}>{`Conductor ${idx + 1}`}</InputLabel>
+              <InputLabel id={conductorLabelId}>{`Conductor ${phaseLabel[idx]}`}</InputLabel>
               <Select
                 labelId={conductorLabelId}
                 id={conductorSelectId}
@@ -78,7 +80,7 @@ function ConductorInput({
               </Select>
             </FormControl>
             <FormControl sx={{ mr: 2, minWidth: 180 }}>
-              <InputLabel id={materialLabelId}>{`Material ${idx + 1}`}</InputLabel>
+              <InputLabel id={materialLabelId}>{`Material ${phaseLabel[idx]}`}</InputLabel>
               <Select
                 labelId={materialLabelId}
                 id={materialSelectId}
@@ -99,8 +101,7 @@ function ConductorInput({
             <Box sx={{ ml: 2 }}>
               <Typography variant="body2">Resistivity: {property.resistivity} Ω·m</Typography>
               <Typography variant="body2">Temp Coef: {property.temp_coef_of_resistivity} 1/C</Typography>
-              <Typography variant="body2">Permeability: {property.conductor_permeability} H/m</Typography>
-              <Typography variant="body2">Permissivity: {property.conductor_permissivity} F/m</Typography>
+              <Typography variant="body2">Permeability(Rel): {property.permeability_relative}</Typography>
               <Typography variant="body2">Conductivity: {property.conductor_conductivity} S/m</Typography>
             </Box>
           </Box>
@@ -110,7 +111,7 @@ function ConductorInput({
         variant="outlined"
         startIcon={<AddCircleOutlineIcon />}
         onClick={handleAddConductor}
-        disabled={conductorIndices.length >= 4}
+        disabled={conductorIndices.length >= 3}
         sx={{ mt: 1 }}
       >
         Add Conductor

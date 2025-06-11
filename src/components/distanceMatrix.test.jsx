@@ -29,28 +29,30 @@ describe('DistanceMatrix integration and calculation', () => {
 
   it('correctly calls the mocked getRadiusValue for each conductor', () => {
     setup([0, 1, 2]);
+    const labels = ["A", "B", "C"];
+
     const radiusValues = [10, 20, 30];
     radiusValues.forEach((value, idx) => {
-      expect(screen.getByLabelText(`GMR${idx + 1}`).value).toBe((value * Math.exp(-0.25)).toFixed(4));
+      expect(screen.getByLabelText(`GMR${labels[idx]}`).value).toBe((value * Math.exp(-0.25)).toFixed(4));
     });
   });
 
   it('renders correct number of distance and GMR fields for 3 conductors', () => {
     setup([0, 1, 2]);
-    expect(screen.getByLabelText('GMR1')).toBeInTheDocument();
-    expect(screen.getByLabelText('GMR2')).toBeInTheDocument();
-    expect(screen.getByLabelText('GMR3')).toBeInTheDocument();
-    expect(screen.getByLabelText('D12')).toBeInTheDocument();
-    expect(screen.getByLabelText('D13')).toBeInTheDocument();
-    expect(screen.getByLabelText('D23')).toBeInTheDocument();
+    expect(screen.getByLabelText('GMRA')).toBeInTheDocument();
+    expect(screen.getByLabelText('GMRB')).toBeInTheDocument();
+    expect(screen.getByLabelText('GMRC')).toBeInTheDocument();
+    expect(screen.getByLabelText('DAB')).toBeInTheDocument();
+    expect(screen.getByLabelText('DAC')).toBeInTheDocument();
+    expect(screen.getByLabelText('DBC')).toBeInTheDocument();
   });
 
   it('calculates GMD in mm and calls setGmd with correct value', () => {
     const { setGmd } = setup([0, 1, 2]);
     // Fill in D12, D13, D23
-    fireEvent.change(screen.getByLabelText('D12'), { target: { value: '100' } });
-    fireEvent.change(screen.getByLabelText('D13'), { target: { value: '200' } });
-    fireEvent.change(screen.getByLabelText('D23'), { target: { value: '300' } });
+    fireEvent.change(screen.getByLabelText('DAB'), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText('DAC'), { target: { value: '200' } });
+    fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '300' } });
     fireEvent.click(screen.getByText('Calculate GMD'));
     // GMD = (100*200*300)^(1/3) = 181.712059
     expect(setGmd).toHaveBeenCalledWith(expect.closeTo(181.712, 0.001));
@@ -58,9 +60,9 @@ describe('DistanceMatrix integration and calculation', () => {
 
   it('shows error if any distance is invalid or <= 0', () => {
     const { setGmd } = setup([0, 1, 2]);
-    fireEvent.change(screen.getByLabelText('D12'), { target: { value: '-5' } });
-    fireEvent.change(screen.getByLabelText('D13'), { target: { value: '200' } });
-    fireEvent.change(screen.getByLabelText('D23'), { target: { value: '300' } });
+    fireEvent.change(screen.getByLabelText('DAB'), { target: { value: '-5' } });
+    fireEvent.change(screen.getByLabelText('DAC'), { target: { value: '200' } });
+    fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '300' } });
     fireEvent.click(screen.getByText('Calculate GMD'));
     expect(setGmd).toHaveBeenCalledWith('Invalid distances');
   });
@@ -70,9 +72,9 @@ describe('DistanceMatrix integration and calculation', () => {
     // Switch to inches
     fireEvent.click(screen.getByText('inches'));
     // Enter D12, D13, D23 in inches
-    fireEvent.change(screen.getByLabelText('D12'), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText('D13'), { target: { value: '2' } });
-    fireEvent.change(screen.getByLabelText('D23'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('DAB'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('DAC'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '3' } });
     fireEvent.click(screen.getByText('Calculate GMD'));
     // GMD = (1*2*3)^(1/3) = 1.8171 in, convert to mm: 1.8171*25.4 = 46.202
     expect(setGmd).toHaveBeenCalledWith(expect.closeTo(46.202, 0.01));
@@ -80,11 +82,11 @@ describe('DistanceMatrix integration and calculation', () => {
 
   it('renders correct number of fields for 2 conductors', () => {
     setup([0, 1]);
-    expect(screen.getByLabelText('GMR1')).toBeInTheDocument();
-    expect(screen.getByLabelText('GMR2')).toBeInTheDocument();
-    expect(screen.getByLabelText('D12')).toBeInTheDocument();
-    expect(screen.queryByLabelText('GMR3')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('D13')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('GMRA')).toBeInTheDocument();
+    expect(screen.getByLabelText('GMRB')).toBeInTheDocument();
+    expect(screen.getByLabelText('DAB')).toBeInTheDocument();
+    expect(screen.queryByLabelText('GMRC')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('DAC')).not.toBeInTheDocument();
   });
 
   it('displays GMD result in mm and inches when gmd is set', () => {
@@ -108,5 +110,42 @@ describe('DistanceMatrix integration and calculation', () => {
       />
     );
     expect(screen.getByText('Invalid distances')).toBeInTheDocument();
+  });
+});
+
+describe('When Using the Neutral Conductor', () => {
+  // Custom setup for this block
+  function setupWithNeutral(conductorIndices = [0, 1, 2], neutralIndex = 3) {
+    const setGmd = jest.fn();
+    render(
+      <DistanceMatrix
+        gmd={0}
+        setGmd={setGmd}
+        conductorIndices={conductorIndices}
+        neutralIndex={neutralIndex}
+      />
+    );
+    return { setGmd };
+  }
+
+  it('renders neutral conductor fields when neutralIndex is set', () => {
+    setupWithNeutral();
+    expect(screen.getByLabelText('GMRn')).toBeInTheDocument();
+    expect(screen.getByLabelText('DnA')).toBeInTheDocument();
+    expect(screen.getByLabelText('DnB')).toBeInTheDocument();
+    expect(screen.getByLabelText('DnC')).toBeInTheDocument();
+  });
+
+  it('calculates GMD including neutral conductor', () => {
+    const { setGmd } = setupWithNeutral();
+    fireEvent.change(screen.getByLabelText('DAB'), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText('DAC'), { target: { value: '127' } });
+    fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText('DnA'), { target: { value: '150' } });
+    fireEvent.change(screen.getByLabelText('DnB'), { target: { value: '200' } });
+    fireEvent.change(screen.getByLabelText('DnC'), { target: { value: '210' } });
+    // ...other changes...
+    fireEvent.click(screen.getByText('Calculate GMD'));
+    expect(setGmd).toHaveBeenCalledWith(expect.any(Number));
   });
 });

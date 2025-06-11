@@ -68,7 +68,7 @@ describe('ConductorInput', () => {
 
   it('changing conductor select updates index', () => {
     setup();
-    const select = screen.getByRole('combobox', { name: 'Conductor 1' });
+    const select = screen.getByRole('combobox', { name: 'Conductor A' });
     fireEvent.mouseDown(select);
     const option = screen.getByText('CondB');
     fireEvent.click(option);
@@ -77,7 +77,7 @@ describe('ConductorInput', () => {
 
   it('changing material select updates index', () => {
     setup();
-    const select = screen.getByRole('combobox', { name: 'Material 1' });
+    const select = screen.getByRole('combobox', { name: 'Material A' });
     fireEvent.mouseDown(select);
     const option = screen.getByText('Aluminum');
     fireEvent.click(option);

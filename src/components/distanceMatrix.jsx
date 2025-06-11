@@ -1,33 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Button, ButtonGroup, ToggleButton,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput } from '@mui/material';
 
-
 import { getRadiusValue } from '../data/conductorData';
 
-function DistanceMatrix({ gmd, setGmd, conductorIndices }) {
-  const [distances, setDistances] = useState([
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-  ]);
+
+const phaseLabel  = ['A', 'B', 'C', 'D'];
+
+function DistanceMatrix({ gmd, setGmd, conductorIndices, neutralIndex = null }) {
+  // Compute matrix size
+  const hasNeutral = neutralIndex !== null;
+  const N = conductorIndices.length + (hasNeutral ? 1 : 0);
+
+
+  const [distances, setDistances] = useState(
+    Array.from({ length: N }, () => Array(N).fill(0))
+  );
   const [unit, setUnit] = useState('mm'); // 'mm' or 'in'
 
 
   useEffect(() => {
-    const N = conductorIndices.length;
+    const newN = conductorIndices.length + (neutralIndex !== null ? 1 : 0);
     setDistances(prev => {
       // Expand or shrink the matrix as needed
-      let newDistances = prev.slice(0, N).map(row => row.slice(0, N));
-      while (newDistances.length < N) {
-        newDistances.push(Array(N).fill(0));
+      let newDistances = prev.slice(0, newN).map(row => row.slice(0, newN));
+      while (newDistances.length < newN) {
+        newDistances.push(Array(newN).fill(0));
       }
       newDistances = newDistances.map(row => {
-        while (row.length < N) row.push(0);
+        while (row.length < newN) row.push(0);
         return row;
       });
       return newDistances;
     });
-  }, [conductorIndices.length]);
+  }, [conductorIndices.length, neutralIndex]);
 
   // Conversion factors
   const mmToIn = (mm) => mm / 25.4;
@@ -37,7 +42,6 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices }) {
     setDistances(prev => {
       const newDistances = prev.map(row => [...row]);
       newDistances[i][j] = value;
-      // Keep symmetry: update the mirrored cell
       if (i !== j) newDistances[j][i] = value;
       return newDistances;
     });
@@ -49,21 +53,23 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices }) {
       handleDistanceChange(i, j, value);
     }
   };
+  
+  const getRadius = (idx) => {
+    if (idx < conductorIndices.length) {
+      return getRadiusValue(conductorIndices[idx]);
+    } else if (hasNeutral && idx === conductorIndices.length) {
+      return getRadiusValue(neutralIndex);
+    }
+    return 0;
+  };
 
   const calculateSelfDistance = (idx) => {
-
-    if (idx < 0 || idx >= conductorIndices.length) {
-        return 0;
-    }
-    const thisConductor = conductorIndices[idx];
-    const r = getRadiusValue(thisConductor); // mm
-
+    const r = getRadius(idx); // mm
     const gmr_mm = r * Math.exp(-0.25);
     return unit === 'mm' ? gmr_mm.toFixed(4) : mmToIn(gmr_mm).toFixed(4);
   };
 
   const calculateGMD = () => {
-    const N = conductorIndices.length;
     let product = 1;
     let count = 0;
     for (let i = 0; i < N; i++) {
@@ -75,7 +81,6 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices }) {
             setGmd('Invalid distances');
             return;
           }
-          // Convert to mm if input is in inches
           if (unit === 'in') d = inToMm(d);
           product *= d;
           count++;
@@ -111,21 +116,33 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices }) {
         </ToggleButton>
       </ButtonGroup>
       <Box>
-        {distances.map((row, i) => (
+        {Array.from({ length: N }).map((_, i) => (
           <Box key={i} sx={{ display: 'flex', mb: 1 }}>
-            {row.map((val, j) => {
+            {Array.from({ length: N }).map((_, j) => {
               if (j < i) {
-                // Lower left: blank
                 return <Box key={j} sx={{ width: 120, mr: 2 }} />;
               }
+              // Label for conductors or neutral
+              const label =
+                i === j
+                  ? (i < conductorIndices.length
+                      ? `GMR${phaseLabel[i]}`
+                      : 'GMRn')
+                  : (i < conductorIndices.length
+                      ? (j < conductorIndices.length
+                          ? `D${phaseLabel[i]}${phaseLabel[j]}`
+                          : `Dn${phaseLabel[i]}`)
+                      : (j < conductorIndices.length
+                          ? `Dn${phaseLabel[i]}`
+                          : 'Dnn'));
               return (
                 <FormControl key={j} sx={{ mr: 2, width: 120 }}>
                   <InputLabel shrink htmlFor={`distance-${i}${j}`}>
-                    {i === j ? `GMR${i + 1}` : `D${i + 1}${j + 1}`}
+                    {label}
                   </InputLabel>
                   <FilledInput
                     id={`distance-${i}${j}`}
-                    value={i === j ? calculateSelfDistance(i) : val}
+                    value={i === j ? calculateSelfDistance(i) : distances[i][j]}
                     onChange={e => handleInput(e, i, j)}
                     disabled={i === j}
                     endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
