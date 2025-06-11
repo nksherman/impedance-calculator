@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, ButtonGroup, ToggleButton,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput } from '@mui/material';
 
-function DistanceMatrix({ gmd, setGmd, getRadiusValue, conductorIndices }) {
+
+import { getRadiusValue } from '../data/conductorData';
+
+function DistanceMatrix({ gmd, setGmd, conductorIndices }) {
   const [distances, setDistances] = useState([
     [0, 0, 0],
     [0, 0, 0],
@@ -9,14 +12,35 @@ function DistanceMatrix({ gmd, setGmd, getRadiusValue, conductorIndices }) {
   ]);
   const [unit, setUnit] = useState('mm'); // 'mm' or 'in'
 
+
+  useEffect(() => {
+    const N = conductorIndices.length;
+    setDistances(prev => {
+      // Expand or shrink the matrix as needed
+      let newDistances = prev.slice(0, N).map(row => row.slice(0, N));
+      while (newDistances.length < N) {
+        newDistances.push(Array(N).fill(0));
+      }
+      newDistances = newDistances.map(row => {
+        while (row.length < N) row.push(0);
+        return row;
+      });
+      return newDistances;
+    });
+  }, [conductorIndices.length]);
+
   // Conversion factors
   const mmToIn = (mm) => mm / 25.4;
   const inToMm = (inch) => inch * 25.4;
 
   const handleDistanceChange = (i, j, value) => {
-    const newDistances = distances.map(row => [...row]);
-    newDistances[i][j] = value;
-    setDistances(newDistances);
+    setDistances(prev => {
+      const newDistances = prev.map(row => [...row]);
+      newDistances[i][j] = value;
+      // Keep symmetry: update the mirrored cell
+      if (i !== j) newDistances[j][i] = value;
+      return newDistances;
+    });
   };
 
   const handleInput = (e, i, j) => {
@@ -26,8 +50,14 @@ function DistanceMatrix({ gmd, setGmd, getRadiusValue, conductorIndices }) {
     }
   };
 
-  const calculateSelfDistance = (i) => {
-    const r = getRadiusValue(i); // mm
+  const calculateSelfDistance = (idx) => {
+
+    if (idx < 0 || idx >= conductorIndices.length) {
+        return 0;
+    }
+    const thisConductor = conductorIndices[idx];
+    const r = getRadiusValue(thisConductor); // mm
+
     const gmr_mm = r * Math.exp(-0.25);
     return unit === 'mm' ? gmr_mm.toFixed(4) : mmToIn(gmr_mm).toFixed(4);
   };
@@ -90,7 +120,7 @@ function DistanceMatrix({ gmd, setGmd, getRadiusValue, conductorIndices }) {
               }
               return (
                 <FormControl key={j} sx={{ mr: 2, width: 120 }}>
-                  <InputLabel shrink>
+                  <InputLabel shrink htmlFor={`distance-${i}${j}`}>
                     {i === j ? `GMR${i + 1}` : `D${i + 1}${j + 1}`}
                   </InputLabel>
                   <FilledInput

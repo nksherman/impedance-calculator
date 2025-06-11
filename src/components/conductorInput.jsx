@@ -1,13 +1,32 @@
 import React from 'react';
-import { Box, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
+import { Box, Select, MenuItem, FormControl, InputLabel, Typography, IconButton, Button } from '@mui/material';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
-
+import { conductorProperties, conductorData } from '../data/conductorData';
 
 function ConductorInput({
-  conductorData, conductorProperties, 
   conductorIndices, setConductorIndices,
   propertyIndices, setPropertyIndices
 }) {
+
+  // Add a new conductor row (max 4)
+  const handleAddConductor = () => {
+    if (conductorIndices.length < 4) {
+      setConductorIndices([...conductorIndices, 0]);
+      setPropertyIndices([...propertyIndices, 0]);
+    }
+  };
+  // Remove a conductor row (min 1)
+  const handleRemoveConductor = (idx) => {
+    if (conductorIndices.length > 1) {
+      const newConds = conductorIndices.filter((_, i) => i !== idx);
+      const newProps = propertyIndices.filter((_, i) => i !== idx);
+      setConductorIndices(newConds);
+      setPropertyIndices(newProps);
+    }
+  };
+
 
   const handleConductorChange = (idx, value) => {
     const newIndices = [...conductorIndices];
@@ -22,17 +41,33 @@ function ConductorInput({
     setPropertyIndices(newProps);
   };
 
-
   return (
     <Box>
-      {[0, 1, 2].map((idx) => {
+      {conductorIndices.map((conIdx, idx) => {
         const conductor = conductorData[conductorIndices[idx]];
         const property = conductorProperties[propertyIndices[idx]];
+        // Generate unique IDs for accessibility
+        const conductorSelectId = `conductor-select-${idx}`;
+        const conductorLabelId = `conductor-label-${idx}`;
+        const materialSelectId = `material-select-${idx}`;
+        const materialLabelId = `material-label-${idx}`;
         return (
           <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <IconButton
+              aria-label="remove"
+              color="error"
+              onClick={() => handleRemoveConductor(idx)}
+              disabled={conductorIndices.length === 1}
+              sx={{ mr: 1 }}
+              size="large"
+            >
+              <RemoveCircleOutlineIcon />
+            </IconButton>
             <FormControl sx={{ mr: 2, minWidth: 180 }}>
-              <InputLabel>{`Conductor ${idx + 1}`}</InputLabel>
+              <InputLabel id={conductorLabelId}>{`Conductor ${idx + 1}`}</InputLabel>
               <Select
+                labelId={conductorLabelId}
+                id={conductorSelectId}
                 value={conductorIndices[idx]}
                 label={`Conductor ${idx + 1}`}
                 onChange={e => handleConductorChange(idx, e.target.value)}
@@ -43,8 +78,10 @@ function ConductorInput({
               </Select>
             </FormControl>
             <FormControl sx={{ mr: 2, minWidth: 180 }}>
-              <InputLabel>{`Material ${idx + 1}`}</InputLabel>
+              <InputLabel id={materialLabelId}>{`Material ${idx + 1}`}</InputLabel>
               <Select
+                labelId={materialLabelId}
+                id={materialSelectId}
                 value={propertyIndices[idx]}
                 label={`Material ${idx + 1}`}
                 onChange={e => handlePropertyChange(idx, e.target.value)}
@@ -60,7 +97,6 @@ function ConductorInput({
               <Typography variant="body2">Outer Dia: {conductor.outer_diam} mm</Typography>
             </Box>
             <Box sx={{ ml: 2 }}>
-              <Typography variant="body2"><b>{property.type}</b></Typography>
               <Typography variant="body2">Resistivity: {property.resistivity} Ω·m</Typography>
               <Typography variant="body2">Temp Coef: {property.temp_coef_of_resistivity} 1/C</Typography>
               <Typography variant="body2">Permeability: {property.conductor_permeability} H/m</Typography>
@@ -70,8 +106,18 @@ function ConductorInput({
           </Box>
         );
       })}
+      <Button
+        variant="outlined"
+        startIcon={<AddCircleOutlineIcon />}
+        onClick={handleAddConductor}
+        disabled={conductorIndices.length >= 4}
+        sx={{ mt: 1 }}
+      >
+        Add Conductor
+      </Button>
     </Box>
-  )
+  );
 }
+
 
 export default ConductorInput;
