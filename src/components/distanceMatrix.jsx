@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, ButtonGroup, ToggleButton,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput } from '@mui/material';
+import { Button, ButtonGroup, ToggleButton, FormControlLabel, Switch,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput } from '@mui/material';
 
 import { getRadiusValue } from '../data/conductorData';
 
@@ -7,15 +7,15 @@ import { getRadiusValue } from '../data/conductorData';
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
 function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = "" }) {
-  // Compute matrix size
   const hasNeutral = neutralIndex !== "";
   const N = conductorIndices.length + (hasNeutral ? 1 : 0);
-
 
   const [distances, setDistances] = useState(
     Array.from({ length: N }, () => Array(N).fill(0))
   );
 
+  const [manualOverride, setManualOverride] = useState(false);
+  const [manualGmd, setManualGmd] = useState("");
 
   useEffect(() => {
     const newN = conductorIndices.length + (neutralIndex !== "" ? 1 : 0);
@@ -37,6 +37,8 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
   const mmToIn = (mm) => mm / 25.4;
   const inToMm = (inch) => inch * 25.4;
 
+  const displayedUnit = unit === 'in' ? 'in' : 'mm';
+
   const handleDistanceChange = (i, j, value) => {
     setDistances(prev => {
       const newDistances = prev.map(row => [...row]);
@@ -54,7 +56,6 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
   };
   
   const getRadius = (idx) => {
-
     if (idx < conductorIndices.length) {
       return getRadiusValue(conductorIndices[idx]);
     } else if (hasNeutral && idx === conductorIndices.length) {
@@ -92,11 +93,37 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
     setGmd(gmd_mm);
   };
 
+  const handleManualGmdChange = (e) => {
+    const val = e.target.value;
+    setManualGmd(val);
+    if (val === "" || isNaN(val) || Number(val) <= 0) {
+      setGmd('Invalid distances');
+    } else {
+      // Always convert to mm for calculation
+      const gmdValue = unit === 'in' ? inToMm(Number(val)) : Number(val);
+      setGmd(gmdValue);
+    }
+  };
+
   return (
     <Box border={1}>
       <Typography variant="h6" sx={{ mt: 2 }}>
-        Distances (mm):
+        Distances ({displayedUnit}):
       </Typography>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={manualOverride}
+            onChange={e => {
+              setManualOverride(e.target.checked);
+              if (!e.target.checked) setManualGmd("");
+            }}
+            color="primary"
+          />
+        }
+        label="Manual GMD override"
+        sx={{ mb: 2 }}
+      />
       <Box>
         {Array.from({ length: N }).map((_, i) => (
           <Box key={i} sx={{ display: 'flex', mb: 1 }}>
@@ -104,7 +131,6 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
               if (j < i) {
                 return <Box key={j} sx={{ width: 120, mr: 2 }} />;
               }
-              // Label for conductors or neutral
               const label =
                 i === j
                   ? (i < conductorIndices.length
@@ -126,8 +152,10 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
                     id={`distance-${i}${j}`}
                     value={i === j ? calculateSelfDistance(i) : (distances[i][j] ?? "")}
                     onChange={e => handleInput(e, i, j)}
-                    disabled={i === j}
-                    endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}
+                    disabled={i === j || manualOverride}
+                    endAdornment={
+                      <InputAdornment position="end">{displayedUnit}</InputAdornment>
+                    }
                     inputProps={{
                       'aria-label': 'distance',
                       inputMode: 'decimal',
@@ -145,10 +173,44 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
           </Box>
         ))}
       </Box>
-
-      <Button variant="contained" sx={{ mt: 2 }} onClick={calculateGMD}>Calculate GMD</Button>
+      <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+        <Button
+          variant="contained"
+          onClick={calculateGMD}
+          disabled={manualOverride}
+        >
+          Calculate GMD
+        </Button>
+        <Box sx={{ ml: 2, minWidth: 220 }}>
+          {manualOverride && (
+            <FormControl fullWidth>
+              <InputLabel htmlFor="manual-gmd">Manual GMD</InputLabel>
+              <FilledInput
+                id="manual-gmd"
+                value={manualGmd}
+                onChange={handleManualGmdChange}
+                endAdornment={
+                  <InputAdornment position="end">{displayedUnit}</InputAdornment>
+                }
+                inputProps={{
+                  'aria-label': 'manual-gmd',
+                  inputMode: 'decimal',
+                  pattern: '[0-9]*[.]?[0-9]*',
+                  min: '0',
+                  style: { MozAppearance: 'textfield' }
+                }}
+              />
+              <FormHelperText>
+                Enter GMD manually ({displayedUnit})
+              </FormHelperText>
+            </FormControl>
+          )}
+        </Box>
+      </Box>
       {gmd && !isNaN(gmd) && (
-        <Typography variant="h6" sx={{ mt: 2 }}>{`GMD = ${gmd.toFixed(4)} mm (${mmToIn(gmd).toFixed(4)} in)`}</Typography>
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          {`GMD = ${gmd.toFixed(4)} mm (${mmToIn(gmd).toFixed(4)} in)`}
+        </Typography>
       )}
       {gmd === 'Invalid distances' && (
         <Typography color="error" sx={{ mt: 2 }}>Invalid distances</Typography>

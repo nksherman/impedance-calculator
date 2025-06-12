@@ -143,3 +143,112 @@ describe('When Using the Neutral Conductor', () => {
     expect(setGmd).toHaveBeenCalledWith(expect.any(Number));
   });
 });
+describe('Manual GMD override and handleManualGmdChange', () => {
+  function setupManual({ gmd = 0, unit = 'mm', conductorIndices = [0, 1, 2] } = {}) {
+    const setGmd = jest.fn();
+    render(
+      <DistanceMatrix
+        gmd={gmd}
+        setGmd={setGmd}
+        conductorIndices={conductorIndices}
+        unit={unit}
+      />
+    );
+    // Enable manual override
+    fireEvent.click(screen.getByLabelText('Manual GMD override'));
+    return { setGmd };
+  }
+
+  it('shows manual GMD input when override is enabled and hides when disabled', () => {
+    render(
+      <DistanceMatrix
+        gmd={0}
+        setGmd={jest.fn()}
+        conductorIndices={[0, 1, 2]}
+        unit="mm"
+      />
+    );
+    // Initially not present
+    expect(screen.queryByLabelText('manual-gmd')).not.toBeInTheDocument();
+    // Enable manual override
+    fireEvent.click(screen.getByLabelText('Manual GMD override'));
+    expect(screen.getByLabelText('manual-gmd')).toBeInTheDocument();
+    // Disable manual override
+    fireEvent.click(screen.getByLabelText('Manual GMD override'));
+    expect(screen.queryByLabelText('manual-gmd')).not.toBeInTheDocument();
+  });
+
+  it('calls setGmd with correct value in mm when unit is mm', () => {
+    const { setGmd } = setupManual({ unit: 'mm' });
+    const input = screen.getByLabelText('manual-gmd');
+    fireEvent.change(input, { target: { value: '123.45' } });
+    expect(setGmd).toHaveBeenLastCalledWith(123.45);
+  });
+
+  it('calls setGmd with correct value in mm when unit is in', () => {
+    const { setGmd } = setupManual({ unit: 'in' });
+    const input = screen.getByLabelText('manual-gmd');
+    fireEvent.change(input, { target: { value: '2' } });
+    // 2 inches = 50.8 mm
+    expect(setGmd).toHaveBeenLastCalledWith(50.8);
+  });
+
+  it('calls setGmd with "Invalid distances" for empty input', () => {
+      const { setGmd } = setupManual({});
+      const input = screen.getByLabelText('manual-gmd');
+      fireEvent.change(input, { target: { value: '123' } }); // Set to a valid value first
+      fireEvent.change(input, { target: { value: '' } });    // Then clear it
+      expect(setGmd).toHaveBeenLastCalledWith('Invalid distances');
+  });
+
+  it('calls setGmd with "Invalid distances" for non-numeric input', () => {
+    const { setGmd } = setupManual({});
+    const input = screen.getByLabelText('manual-gmd');
+    fireEvent.change(input, { target: { value: 'abc' } });
+    expect(setGmd).toHaveBeenLastCalledWith('Invalid distances');
+  });
+
+  it('calls setGmd with "Invalid distances" for zero or negative input', () => {
+    const { setGmd } = setupManual({});
+    const input = screen.getByLabelText('manual-gmd');
+    fireEvent.change(input, { target: { value: '0' } });
+    expect(setGmd).toHaveBeenLastCalledWith('Invalid distances');
+    fireEvent.change(input, { target: { value: '-5' } });
+    expect(setGmd).toHaveBeenLastCalledWith('Invalid distances');
+  });
+
+  it('disables all distance inputs when manual override is enabled', () => {
+    setupManual({});
+    // All distance fields should be disabled except manual-gmd
+    expect(screen.getByLabelText('manual-gmd')).not.toBeDisabled();
+    expect(screen.getByLabelText('DAB')).toBeDisabled();
+    expect(screen.getByLabelText('DAC')).toBeDisabled();
+    expect(screen.getByLabelText('DBC')).toBeDisabled();
+  });
+
+  it('enables all distance inputs when manual override is disabled', () => {
+    render(
+      <DistanceMatrix
+        gmd={0}
+        setGmd={jest.fn()}
+        conductorIndices={[0, 1, 2]}
+        unit="mm"
+      />
+    );
+    expect(screen.getByLabelText('DAB')).not.toBeDisabled();
+    expect(screen.getByLabelText('DAC')).not.toBeDisabled();
+    expect(screen.getByLabelText('DBC')).not.toBeDisabled();
+  });
+
+  it('shows correct unit in manual GMD input and label for mm', () => {
+    setupManual({ unit: 'mm' });
+    expect(screen.getByLabelText('manual-gmd').parentElement.textContent).toMatch(/mm/);
+    expect(screen.getByText(/Enter GMD manually \(mm\)/)).toBeInTheDocument();
+  });
+
+  it('shows correct unit in manual GMD input and label for in', () => {
+    setupManual({ unit: 'in' });
+    expect(screen.getByLabelText('manual-gmd').parentElement.textContent).toMatch(/in/);
+    expect(screen.getByText(/Enter GMD manually \(in\)/)).toBeInTheDocument();
+  });
+});
