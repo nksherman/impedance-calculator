@@ -124,7 +124,7 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
                   </InputLabel>
                   <FilledInput
                     id={`distance-${i}${j}`}
-                    value={i === j ? calculateSelfDistance(i) : distances[i][j]}
+                    value={i === j ? calculateSelfDistance(i) : (distances[i][j] ?? "")}
                     onChange={e => handleInput(e, i, j)}
                     disabled={i === j}
                     endAdornment={<InputAdornment position="end">{unit}</InputAdornment>}

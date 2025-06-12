@@ -51,6 +51,7 @@ function NeutralInput({
               value={neutralIndex}
               onChange={e => setNeutralIndex(e.target.value)}
               label="Neutral Conductor"
+              disabled={neutralType !== "Span"}
             >
               <MenuItem value={""} disabled>none</MenuItem>
               {conductorData.map((cond, idx) => (
@@ -68,6 +69,7 @@ function NeutralInput({
               value={neutralProperty}
               onChange={e => setNeutralProperty(e.target.value)}
               label="Neutral Material"
+              disabled={neutralType !== "Span"}
             >
               {conductorProperties.map((prop, idx) => (
                 <MenuItem key={prop.type} value={idx}>
