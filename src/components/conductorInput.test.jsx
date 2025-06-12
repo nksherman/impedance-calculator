@@ -2,16 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ConductorInput from './conductorInput';
 
-jest.mock('../data/conductorData', () => ({
-  conductorData: [
-    { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_diam: 3.3 },
-    { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_diam: 4.5 },
-  ],
-  conductorProperties: [
-    { type: 'Copper', resistivity: 1.68e-8, temp_coef_of_resistivity: 0.0039, conductor_permeability: 1.2566e-6, conductor_permissivity: 8.85e-12, conductor_conductivity: 5.96e7 },
-    { type: 'Aluminum', resistivity: 2.82e-8, temp_coef_of_resistivity: 0.004, conductor_permeability: 1.2566e-6, conductor_permissivity: 8.85e-12, conductor_conductivity: 3.77e7 },
-  ],
-}));
+jest.mock('../data/conductorData.json', () => ([
+  { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_diam: 3.3 },
+  { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_diam: 4.5 },
+]));
+
+jest.mock('../data/conductorProperties.json', () => ([
+  { type: 'Copper', resistivity: 1.68e-8, temp_coef_of_resistivity: 0.0039, conductor_permeability: 1.2566e-6, conductor_permissivity: 8.85e-12, conductor_conductivity: 5.96e7 },
+  { type: 'Aluminum', resistivity: 2.82e-8, temp_coef_of_resistivity: 0.004, conductor_permeability: 1.2566e-6, conductor_permissivity: 8.85e-12, conductor_conductivity: 3.77e7 },
+]));
 
 describe('ConductorInput', () => {
   let setConductorIndices, setPropertyIndices;
