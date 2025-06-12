@@ -88,22 +88,12 @@ function ConductorInput({
                 label={`Material ${idx + 1}`}
                 onChange={e => handlePropertyChange(idx, e.target.value)}
               >
+                <MenuItem value={""} disabled>none</MenuItem>
                 {conductorProperties.map((opt, i) => (
                   <MenuItem key={opt.type} value={i}>{opt.type}</MenuItem>
                 ))}
               </Select>
             </FormControl>
-            <Box sx={{ mr: 2 }}>
-              <Typography variant="body2">Strands: {conductor.strand_count}</Typography>
-              <Typography variant="body2">Strand Dia: {conductor.strand_dia} mm</Typography>
-              <Typography variant="body2">Outer Dia: {conductor.outer_diam} mm</Typography>
-            </Box>
-            <Box sx={{ ml: 2 }}>
-              <Typography variant="body2">Resistivity: {property.resistivity} Ω·m</Typography>
-              <Typography variant="body2">Temp Coef: {property.temp_coef_of_resistivity} 1/C</Typography>
-              <Typography variant="body2">Permeability(Rel): {property.permeability_relative}</Typography>
-              <Typography variant="body2">Conductivity: {property.conductor_conductivity} S/m</Typography>
-            </Box>
           </Box>
         );
       })}

@@ -4,8 +4,8 @@ import App from './App';
 // Mock child components and data to isolate App logic
 jest.mock('./components/conductorInput', () => (props) => (
   <div data-testid="conductor-input">
-    <button onClick={() => props.setConductorIndices([0, 0, 0, 0])}>Add Conductor</button>
-    <button onClick={() => props.setConductorIndices([0, 0])}>Remove Conductor</button>
+    <button onClick={() => props.setConductorIndices([0, 0, 0])}>Add Conductor</button>
+    <button onClick={() => props.setConductorIndices([0])}>Remove Conductor</button>
   </div>
 ));
 jest.mock('./components/distanceMatrix', () => (props) => (
@@ -57,17 +57,18 @@ describe('App', () => {
     // No assertion needed, just ensure no crash
   });
 
-  test('shows per-unit-length and total values after calculation', () => {
+  test('shows per-phase and summary values after calculation', () => {
     render(<App />);
-    // Set GMD to a valid value
+    // Set GMD to a valid value via the mock DistanceMatrix button
     fireEvent.click(screen.getByText('Set GMD'));
     // Click calculate
     fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
-    // Should show per-unit-length and total values
-    expect(screen.getAllByText(/Per-unit-length values:/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Total Values:/i)).toBeInTheDocument();
-    expect(screen.getByText(/Total Resistance XL/i)).toBeInTheDocument();
-    expect(screen.getByText(/Total Resistance XC/i)).toBeInTheDocument();
+    // Should show per-phase and summary values
+    expect(screen.getByText(/Summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/Per-phase Values/i)).toBeInTheDocument();
+    expect(screen.getByText(/Max Phase Resistance R/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total Inductive Reactance XL/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total Capacitive Reactance XC/i)).toBeInTheDocument();
   });
 
   test('per-unit-length values update when GMD or frequency changes', () => {
@@ -75,13 +76,13 @@ describe('App', () => {
     // Set GMD and calculate
     fireEvent.click(screen.getByText('Set GMD'));
     fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
-    const xlBefore = screen.getByText(/Total Resistance XL/i).textContent;
+    const xlBefore = screen.getByText(/Total Inductive Reactance XL/i).textContent;
 
     // Change frequency
     const freqInput = screen.getByLabelText(/frequency/i);
     fireEvent.change(freqInput, { target: { value: '120' } });
     fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
-    const xlAfter = screen.getByText(/Total Resistance XL/i).textContent;
+    const xlAfter = screen.getByText(/Total Inductive Reactance XL/i).textContent;
 
     expect(xlBefore).not.toEqual(xlAfter);
   });

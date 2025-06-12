@@ -29,14 +29,6 @@ describe('ConductorInput', () => {
     );
   }
 
-  it('renders initial conductor and material selects and info', () => {
-    setup();
-    expect(screen.getByText('Strands: 7')).toBeInTheDocument();
-    expect(screen.getByText('Strand Dia: 1.1 mm')).toBeInTheDocument();
-    expect(screen.getByText('Outer Dia: 3.3 mm')).toBeInTheDocument();
-    expect(screen.getByText('Copper')).toBeInTheDocument();
-    expect(screen.getByText(/Resistivity: 1.68e-8/)).toBeInTheDocument();
-  });
 
   it('add conductor row up to 4 and disables button at 4', () => {
     setup([0, 0, 0, 0], [0, 0, 0, 0]);
@@ -82,14 +74,5 @@ describe('ConductorInput', () => {
     const option = screen.getByText('Aluminum');
     fireEvent.click(option);
     expect(setPropertyIndices).toHaveBeenCalledWith([1]);
-  });
-
-  it('displays correct info for selected conductor/material', () => {
-    setup([1], [1]);
-    expect(screen.getByText('Strands: 19')).toBeInTheDocument();
-    expect(screen.getByText('Strand Dia: 0.9 mm')).toBeInTheDocument();
-    expect(screen.getByText('Outer Dia: 4.5 mm')).toBeInTheDocument();
-    expect(screen.getByText('Aluminum')).toBeInTheDocument();
-    expect(screen.getByText(/Resistivity: 2.82e-8/)).toBeInTheDocument();
   });
 });

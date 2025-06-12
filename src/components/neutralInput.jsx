@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
+import { Paper, Box, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
 import { conductorProperties, conductorData } from '../data/conductorData';
 
 function NeutralInput({ 
@@ -11,33 +11,39 @@ function NeutralInput({
 
   useEffect(() => {
     if (neutralType === 'MGN') {
-      setNeutralIndex(null);
-    } else if (neutralType === 'Span' && neutralIndex === null) {
+      setNeutralIndex("");
+    } else if (neutralType === 'Span' && neutralIndex === "") {
       setNeutralIndex(0);
     }
   }, [neutralType, setNeutralIndex, neutralIndex]);
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Neutral Conductor Input
-      </Typography>
-      <FormControl sx={{ mr: 2, minWidth: 180 }}>
-        <InputLabel id="neutral-type-label">Neutral Type</InputLabel>
-        <Select
-          labelId="neutral-type-label"
-          id="neutral-type-select"
-          value={neutralType}
-          label="Neutral Type"
-          onChange={e => setNeutralType(e.target.value)}
-        >
-          <MenuItem value="Span">Span</MenuItem>
-          <MenuItem value="MGN">MGN</MenuItem>
-        </Select>
-      </FormControl>
+    <Box sx={{ p: 2, border: 1, borderRadius: 2, mb: 2 }}>
+      {/* Row 1: Neutral Type */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Box sx={{display: "flex", flexDirection: "row",justifyContent:"center"}} >
+        <Typography variant="h6" gutterBottom>
+          Neutral
+        </Typography>
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel id="neutral-type-label">Neutral Type</InputLabel>
+            <Select
+              labelId="neutral-type-label"
+              id="neutral-type-select"
+              value={neutralType}
+              label="Neutral Type"
+              onChange={e => setNeutralType(e.target.value)}
+            >
+              <MenuItem value="Span">Span</MenuItem>
+              <MenuItem value="MGN">MGN</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+      {/* Row 2: Conductor and Material (only if Span) */}
       {neutralType === "Span" && (
-        <>
-          <FormControl sx={{ mr: 2, minWidth: 180 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControl sx={{ minWidth: 180 }}>
             <InputLabel shrink id="neutral-conductor-label">Neutral Conductor</InputLabel>
             <Select
               labelId="neutral-conductor-label"
@@ -46,6 +52,7 @@ function NeutralInput({
               onChange={e => setNeutralIndex(e.target.value)}
               label="Neutral Conductor"
             >
+              <MenuItem value={""} disabled>none</MenuItem>
               {conductorData.map((cond, idx) => (
                 <MenuItem key={idx} value={idx}>
                   {cond.name}
@@ -53,7 +60,7 @@ function NeutralInput({
               ))}
             </Select>
           </FormControl>
-          <FormControl sx={{ mr: 2, minWidth: 180 }}>
+          <FormControl sx={{ minWidth: 180 }}>
             <InputLabel id="neutral-material-label">Neutral Material</InputLabel>
             <Select
               labelId="neutral-material-label"
@@ -69,30 +76,7 @@ function NeutralInput({
               ))}
             </Select>
           </FormControl>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2">
-              Strands: {conductorData[neutralIndex]?.strand_count}
-            </Typography>
-            <Typography variant="body2">
-              Strand Dia: {conductorData[neutralIndex]?.strand_dia} mm
-            </Typography>
-            <Typography variant="body2">
-              Outer Dia: {conductorData[neutralIndex]?.outer_diam} mm
-            </Typography>
-            <Typography variant="body2">
-              Resistivity: {conductorProperties[neutralProperty]?.resistivity} Ω·m
-            </Typography>
-            <Typography variant="body2">
-              Temp Coef: {conductorProperties[neutralProperty]?.temp_coef_of_resistivity} 1/C
-            </Typography>
-            <Typography variant="body2">
-              Permeability(Rel): {conductorProperties[neutralProperty]?.permeability_relative} H/m
-            </Typography>
-            <Typography variant="body2">
-              Conductivity: {conductorProperties[neutralProperty]?.conductor_conductivity} S/m
-            </Typography>
-          </Box>
-        </>
+        </Box>
       )}
     </Box>
   );

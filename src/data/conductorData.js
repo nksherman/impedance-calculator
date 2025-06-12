@@ -30,6 +30,11 @@ export const conductorData = [ //mm
 // functions working with this data
 
 export function getRadiusValue(cond) {
-  // Use half the outer diameter as radius
-  return conductorData[cond].outer_diam / 2;
-};
+  try {
+    // Use half the outer diameter as radius
+    return conductorData[cond].outer_diam / 2;
+  } catch (error) {
+    console.error('Error in getRadiusValue:', error);
+    return null; // or handle as appropriate
+  }
+}

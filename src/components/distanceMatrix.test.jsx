@@ -22,6 +22,8 @@ describe('DistanceMatrix integration and calculation', () => {
         gmd={0}
         setGmd={setGmd}
         conductorIndices={conductorIndices}
+        unit={"mm"}
+        neutralIndex={""}
       />
     );
     return { setGmd };
@@ -55,7 +57,9 @@ describe('DistanceMatrix integration and calculation', () => {
     fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '300' } });
     fireEvent.click(screen.getByText('Calculate GMD'));
     // GMD = (100*200*300)^(1/3) = 181.712059
-    expect(setGmd).toHaveBeenCalledWith(expect.closeTo(181.712, 0.001));
+    expect(setGmd).toHaveBeenCalled();
+    const calledWith = setGmd.mock.calls[0][0];
+    expect(calledWith).toBeCloseTo(181.712, 3);
   });
 
   it('shows error if any distance is invalid or <= 0', () => {
@@ -65,19 +69,6 @@ describe('DistanceMatrix integration and calculation', () => {
     fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '300' } });
     fireEvent.click(screen.getByText('Calculate GMD'));
     expect(setGmd).toHaveBeenCalledWith('Invalid distances');
-  });
-
-  it('converts distances from inches to mm when unit is toggled', () => {
-    const { setGmd } = setup([0, 1, 2]);
-    // Switch to inches
-    fireEvent.click(screen.getByText('inches'));
-    // Enter D12, D13, D23 in inches
-    fireEvent.change(screen.getByLabelText('DAB'), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText('DAC'), { target: { value: '2' } });
-    fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '3' } });
-    fireEvent.click(screen.getByText('Calculate GMD'));
-    // GMD = (1*2*3)^(1/3) = 1.8171 in, convert to mm: 1.8171*25.4 = 46.202
-    expect(setGmd).toHaveBeenCalledWith(expect.closeTo(46.202, 0.01));
   });
 
   it('renders correct number of fields for 2 conductors', () => {
@@ -96,6 +87,7 @@ describe('DistanceMatrix integration and calculation', () => {
         gmd={100}
         setGmd={jest.fn()}
         conductorIndices={[0, 1, 2]}
+        unit={"mm"}
       />
     );
     expect(screen.getByText(/GMD = 100.0000 mm \(3.9370 in\)/)).toBeInTheDocument();
@@ -107,6 +99,7 @@ describe('DistanceMatrix integration and calculation', () => {
         gmd="Invalid distances"
         setGmd={jest.fn()}
         conductorIndices={[0, 1, 2]}
+        unit={"mm"}
       />
     );
     expect(screen.getByText('Invalid distances')).toBeInTheDocument();
@@ -122,6 +115,7 @@ describe('When Using the Neutral Conductor', () => {
         gmd={0}
         setGmd={setGmd}
         conductorIndices={conductorIndices}
+        unit={"mm"}
         neutralIndex={neutralIndex}
       />
     );

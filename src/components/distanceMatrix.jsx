@@ -6,20 +6,19 @@ import { getRadiusValue } from '../data/conductorData';
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
-function DistanceMatrix({ gmd, setGmd, conductorIndices, neutralIndex = null }) {
+function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = "" }) {
   // Compute matrix size
-  const hasNeutral = neutralIndex !== null;
+  const hasNeutral = neutralIndex !== "";
   const N = conductorIndices.length + (hasNeutral ? 1 : 0);
 
 
   const [distances, setDistances] = useState(
     Array.from({ length: N }, () => Array(N).fill(0))
   );
-  const [unit, setUnit] = useState('mm'); // 'mm' or 'in'
 
 
   useEffect(() => {
-    const newN = conductorIndices.length + (neutralIndex !== null ? 1 : 0);
+    const newN = conductorIndices.length + (neutralIndex !== "" ? 1 : 0);
     setDistances(prev => {
       // Expand or shrink the matrix as needed
       let newDistances = prev.slice(0, newN).map(row => row.slice(0, newN));
@@ -55,6 +54,7 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, neutralIndex = null }) 
   };
   
   const getRadius = (idx) => {
+
     if (idx < conductorIndices.length) {
       return getRadiusValue(conductorIndices[idx]);
     } else if (hasNeutral && idx === conductorIndices.length) {
@@ -93,28 +93,10 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, neutralIndex = null }) 
   };
 
   return (
-    <>
+    <Box border={1}>
       <Typography variant="h6" sx={{ mt: 2 }}>
         Distances (mm):
       </Typography>
-      <ButtonGroup sx={{ mb: 2 }}>
-        <ToggleButton
-          value="mm"
-          selected={unit === 'mm'}
-          onClick={() => setUnit('mm')}
-          size="small"
-        >
-          mm
-        </ToggleButton>
-        <ToggleButton
-          value="in"
-          selected={unit === 'in'}
-          onClick={() => setUnit('in')}
-          size="small"
-        >
-          inches
-        </ToggleButton>
-      </ButtonGroup>
       <Box>
         {Array.from({ length: N }).map((_, i) => (
           <Box key={i} sx={{ display: 'flex', mb: 1 }}>
@@ -171,7 +153,7 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, neutralIndex = null }) 
       {gmd === 'Invalid distances' && (
         <Typography color="error" sx={{ mt: 2 }}>Invalid distances</Typography>
       )}
-    </>
+    </Box>
   );
 }
 
