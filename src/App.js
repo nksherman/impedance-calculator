@@ -7,13 +7,13 @@ import DistanceMatrix from './components/distanceMatrix';
 
 import './App.css';
 
-import { conductorProperties, conductorData } from './data/conductorData';
+import conductorProperties from './data/conductorProperties.json';
+import conductorData from './data/conductorData.json';
 
 const permeability_of_free_space = 4 * Math.PI * 0.0000001; // H/m
 const permissivity_free_space = 8.854*0.000000000001; // F/m
 
 const phase = ['A', 'B', 'C', 'D']; // Phase labels
-
 
 function formatValue(val, digits = 3) {
   if (val === 0) return "0";
@@ -92,7 +92,6 @@ function App() {
       setNeutralResistance(0);
     }
   };
-
 
   return (
     <Paper className="App" sx={{ p: 4, border: 1 }}>
@@ -176,9 +175,9 @@ function App() {
           )}
         </Box>
 
+      </Paper>
 
-        </Paper>
-        <Button variant="contained" sx={{ mt: 2 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
+      <Button variant="contained" sx={{ mt: 2 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
 
       </Box>
 

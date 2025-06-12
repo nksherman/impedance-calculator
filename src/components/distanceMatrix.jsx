@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, ButtonGroup, ToggleButton, FormControlLabel, Switch,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput } from '@mui/material';
 
-import { getRadiusValue } from '../data/conductorData';
+import { getRadiusValue } from '../data/conductorUtils';
 
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];

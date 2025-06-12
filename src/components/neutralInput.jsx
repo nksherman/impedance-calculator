@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Paper, Box, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
-import { conductorProperties, conductorData } from '../data/conductorData';
+
+
+import conductorProperties from '../data/conductorProperties.json';
+import conductorData from '../data/conductorData.json';
+
 
 function NeutralInput({ 
   neutralIndex, setNeutralIndex, 

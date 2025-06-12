@@ -3,7 +3,8 @@ import { Box, Select, MenuItem, FormControl, InputLabel, Typography, IconButton,
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
-import { conductorProperties, conductorData } from '../data/conductorData';
+import conductorProperties from '../data/conductorProperties.json';
+import conductorData from '../data/conductorData.json';
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
