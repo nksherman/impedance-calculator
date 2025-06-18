@@ -1,0 +1,9 @@
+[
+  {
+    "type": "XLPE",
+    "dielectric_strength": 20.0,
+    "relative_permittivity": 2.3,
+    "thermal_conductivity": 0.35,
+    "density": 930.0
+  }
+]
