@@ -1,25 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { Paper, Box, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
 
-
 import conductorProperties from '../data/conductorProperties.json';
 import conductorData from '../data/conductorData.json';
-
+import { createConductor } from './conductorHelpers';
 
 function NeutralInput({ 
-  neutralIndex, setNeutralIndex, 
-  neutralProperty, setNeutralProperty 
+  neutralArrangement, setNeutralArrangement
 }) {
+  const [neutralType, setNeutralType] = useState('MGN'); // or MGN
 
-  const [neutralType, setNeutralType] = useState('Span'); // or MGN
+  // Determine current indices for selects
+  const currentConductorIndex = neutralArrangement && neutralArrangement.name
+    ? conductorData.findIndex(c => c.name === neutralArrangement.name)
+    : 0;
+  const currentPropertyIndex = neutralArrangement && neutralArrangement.properties?.type
+    ? conductorProperties.findIndex(p => p.type === neutralArrangement.properties.type)
+    : 0;
 
   useEffect(() => {
     if (neutralType === 'MGN') {
-      setNeutralIndex("");
-    } else if (neutralType === 'Span' && neutralIndex === "") {
-      setNeutralIndex(0);
+      setNeutralArrangement("");
+    } else if (neutralType === 'Span' && !neutralArrangement) {
+      // Set to default conductor if switching from blank
+      const defaultConductor = createConductor(conductorData[0], conductorProperties[0]);
+      setNeutralArrangement(defaultConductor);
     }
-  }, [neutralType, setNeutralIndex, neutralIndex]);
+  }, [neutralType, setNeutralArrangement, neutralArrangement]);
+
+  const handleConductorChange = (idx) => {
+    const selectedConductorData = conductorData[idx];
+    const currentProperties = neutralArrangement && neutralArrangement.properties
+      ? neutralArrangement.properties
+      : conductorProperties[0];
+    setNeutralArrangement(createConductor(selectedConductorData, currentProperties));
+  };
+
+  const handlePropertyChange = (idx) => {
+    const selectedProperties = conductorProperties[idx];
+    const currentConductorData = neutralArrangement && neutralArrangement.name
+      ? conductorData.find(c => c.name === neutralArrangement.name)
+      : conductorData[0];
+    setNeutralArrangement(createConductor(currentConductorData, selectedProperties));
+  };
 
   return (
     <Box sx={{ p: 2, border: 1, borderRadius: 2, mb: 2 }}>
@@ -45,15 +68,15 @@ function NeutralInput({
         </Box>
       </Box>
       {/* Row 2: Conductor and Material (only if Span) */}
-      {neutralType === "Span" && (
+      {neutralType === "Span" && neutralArrangement && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <FormControl sx={{ minWidth: 180 }}>
             <InputLabel shrink id="neutral-conductor-label">Neutral Conductor</InputLabel>
             <Select
               labelId="neutral-conductor-label"
               id="neutral-conductor-select"
-              value={neutralIndex}
-              onChange={e => setNeutralIndex(e.target.value)}
+              value={currentConductorIndex}
+              onChange={e => handleConductorChange(e.target.value)}
               label="Neutral Conductor"
               disabled={neutralType !== "Span"}
             >
@@ -70,8 +93,8 @@ function NeutralInput({
             <Select
               labelId="neutral-material-label"
               id="neutral-material-select"
-              value={neutralProperty}
-              onChange={e => setNeutralProperty(e.target.value)}
+              value={currentPropertyIndex}
+              onChange={e => handlePropertyChange(e.target.value)}
               label="Neutral Material"
               disabled={neutralType !== "Span"}
             >

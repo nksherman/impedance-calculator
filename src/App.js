@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Paper,  Box,  ButtonGroup, ToggleButton,  Select, MenuItem, TextField, Button, Typography, InputLabel, FormControl, FilledInput, InputAdornment } from '@mui/material';
 
+import './App.css';
+
 import NeutralInput from './components/neutralInput';
 import ConductorInput from './components/conductorInput';
 import DistanceMatrix from './components/distanceMatrix';
 
-import './App.css';
-
 import conductorProperties from './data/conductorProperties.json';
 import conductorData from './data/conductorData.json';
+
+import { createDefaultConductors } from './components/conductorHelpers';
 
 const permeability_of_free_space = 4 * Math.PI * 0.0000001; // H/m
 const permissivity_free_space = 8.854*0.000000000001; // F/m
@@ -25,16 +27,17 @@ function formatValue(val, digits = 3) {
 }
 
 function App() {
-  const [neutralIndex, setNeutralIndex] = useState(""); // Neutral conductor index
-  const [neutralProperty, setNeutralProperty] = useState(0); // Neutral conductor property index
-
-  const [conductorIndices, setConductorIndices] = useState([0, 0, 0]);
-  const [propertyIndices, setPropertyIndices] = useState([0, 0, 0]);
-
+  const [neutralArrangement, setNeutralArrangement] = useState("");
+  const [conductorArrangements, setConductorArrangements] = useState(() => createDefaultConductors(3));
 
   const [unit, setUnit] = useState('mm'); // 'mm' or 'in'
-
   const [frequency, setFrequency] = useState(60); // Default frequency in Hz
+  const [temperature, setTemperature] = useState(40); // Default temperature in Celsius
+
+  // const [sunIntensity, setSunIntensity] = useState(800); // W/m², typical sunny day
+  // const [appliedVoltage, setAppliedVoltage] = useState(120); // V
+  // const [convHeatTransfer, setConvHeatTransfer] = useState(25); // W/m²K, typical for air
+
   const [totalXlpk, setTotalXlpk] = useState(0); // ohms per km
   const [totalXcpk, setTotalXcpk] = useState(0); // ohms per km
 
@@ -43,21 +46,20 @@ function App() {
   const [gmd, setGmd] = useState(0); // mm 
   const [rlcResults, setRlcResults] = useState([]);
 
-
   const calculateRLC = (gmd_mm, frequency) => {
-
     const gmd_m = gmd_mm / 1000; // Convert mm to m
 
-    const results = conductorIndices.map((_, idx) => {
-      const prop = conductorProperties[propertyIndices[idx]];
-      const cond = conductorData[conductorIndices[idx]];
-      const r_m = (cond.outer_diam / 2) /1000; // mm dia to m rad
-      const area = Math.PI * r_m * r_m;
-      const R = prop.resistivity / area; // Ω/m
-      const GMR = r_m * Math.exp(-0.25);
-      const L = prop.permeability_relative * permeability_of_free_space / (2*Math.PI) * Math.log(gmd_m / GMR); // H/m
-      const C = (Math.PI * permissivity_free_space) / Math.log(gmd_m / r_m); // F/m
+    const results = conductorArrangements.map((conductor, idx) => {
+      const r_m = conductor.circumscribedRadius()
 
+      const permeabilityRelative = conductor.effectivePermeability()
+      const resFn = conductor.resistanceFn();
+      const GMR = conductor.gmr()
+
+      // Temperature correction for resistivity
+      const R = resFn(temperature);
+      const L = permeabilityRelative * permeability_of_free_space / (2*Math.PI) * Math.log(gmd_m / GMR); // H/m
+      const C = (Math.PI * permissivity_free_space) / Math.log(gmd_m / r_m); // F/m
       
       return {
         R: R, // all per/m
@@ -81,17 +83,29 @@ function App() {
     setTotalXcpk(cl_tot * 1000);
 
     // If neutral is selected, calculate its resistance
-    if (neutralIndex !== null && neutralIndex !== undefined && conductorData[neutralIndex]) {
-      const neutralProp = conductorProperties[neutralProperty];
-      const neutralCond = conductorData[neutralIndex];
-      const r_m = (neutralCond.outer_diam / 2) / 1000; // mm dia to m rad
-      const area = Math.PI * r_m * r_m;
-      const neutralR = neutralProp.resistivity / area; // Ω/m
-      setNeutralResistance(neutralR * 1000); // Convert to ohms per km
+    if (neutralArrangement !== "" ) {
+      const resFn = neutralArrangement.resistanceFn();
+
+      const R = resFn(temperature);
+      setNeutralResistance(R * 1000); // Convert to ohms per km
     } else {
       setNeutralResistance(0);
     }
   };
+
+  const conductorPropertyLabel = (conductor) => {
+    // get the weighted properties, and return a label for it
+    if (!conductor) return conductor.name || "No Name";
+
+    const properties = conductor.weightedProperties();
+    let propLabel = properties.map(p => `${p.weight_percent}% ${p.type}`).join(', ');
+
+    if (propLabel.startsWith('100% ')) {
+      propLabel =   propLabel.slice(5); // remove '100% ' prefix
+    }
+
+    return propLabel ? `${conductor.name} (${propLabel})` : conductor.name;
+  }
 
   return (
     <Paper className="App" sx={{ p: 4, border: 1 }}>
@@ -104,81 +118,108 @@ function App() {
           <DistanceMatrix
             gmd={gmd}
             setGmd={setGmd}
-            conductorIndices={conductorIndices}
+            conductorArrangements={conductorArrangements}
             unit={unit}
-            neutralIndex={neutralIndex}
+            neutralArrangement={neutralArrangement}
           />
         </Box>
         {/* Right: Inputs */}
         <Box sx={{ flex: '0 0 40%', minWidth: 320, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <NeutralInput
-            neutralIndex={neutralIndex}
-            setNeutralIndex={setNeutralIndex}
-            neutralProperty={neutralProperty}
-            setNeutralProperty={setNeutralProperty}
+            neutralArrangement={neutralArrangement}
+            setNeutralArrangement={setNeutralArrangement}
           />
           <ConductorInput
-            conductorIndices={conductorIndices}
-            setConductorIndices={setConductorIndices}
-            propertyIndices={propertyIndices}
-            setPropertyIndices={setPropertyIndices}
+            conductorArrangements={conductorArrangements}
+            setConductorArrangements={setConductorArrangements}
+            unit={unit}
           />
         </Box>
       </Box>
 
-
-      <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 4, mt: 2 }}>
       {/* Info Box, and settings */}
+      <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 4, mt: 2 }}>
         <Paper elevation={3} sx={{ p: 2, mt: 2, width: 400, alignSelf: 'flex-start', justifyContent: "left" }}>
-        <ButtonGroup sx={{ mb: 2 }}>
-          <ToggleButton
-            value="mm"
-            selected={unit === 'mm'}
-            onClick={() => setUnit('mm')}
-            size="small"
-          >
-            mm
-          </ToggleButton>
-          <ToggleButton
-            value="in"
-            selected={unit === 'in'}
-            onClick={() => setUnit('in')}
-            size="small"
-          >
-            inches
-          </ToggleButton>
-        </ButtonGroup>
-        <Box>
-          <FilledInput
-            value={frequency}
-            onChange={(e) => {
-              const freq = parseFloat(e.target.value);
-              if (isNaN(freq) || freq <= 0) {
-                setFrequency('Invalid frequency');
-              } else {
-                setFrequency(freq);
-              }
-            }}
-            endAdornment={<InputAdornment position="end">Hz</InputAdornment>}
-            sx={{ mt: 2, mb: 2, width: 200 }}
-            inputProps={{
-              'aria-label': 'frequency',
-              type: 'number',
-              min: 0,
-              step: 1,
-            }}
-          />
-          {frequency === 'Invalid frequency' && (
-            <Typography color="error" data-testid="freq-error">
-              Invalid frequency
+          <ButtonGroup sx={{ mb: 2 }}>
+            <ToggleButton
+              value="mm"
+              selected={unit === 'mm'}
+              onClick={() => setUnit('mm')}
+              size="small"
+            >
+              mm
+            </ToggleButton>
+            <ToggleButton
+              value="in"
+              selected={unit === 'in'}
+              onClick={() => setUnit('in')}
+              size="small"
+            >
+              inches
+            </ToggleButton>
+          </ButtonGroup>
+          <Box label="frequency-input">
+            {/* Set typography inline with filledInput and justify left */}
+            <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'row' }}>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                Frequency (Hz):
+              </Typography>
+              <FilledInput
+                value={frequency}
+                onChange={(e) => {
+                  const freq = parseFloat(e.target.value);
+                  if (isNaN(freq) || freq <= 0) {
+                    setFrequency('Invalid frequency');
+                  } else {
+                    setFrequency(freq);
+                  }
+                }}
+                sx={{ mt: 2, mb: 2, width: 200 }}
+                size="small"
+                inputProps={{
+                  'aria-label': 'frequency',
+                  type: 'number',
+                  min: 0,
+                  step: 1,
+                }}
+              />
+            </Box>
+            {frequency === 'Invalid frequency' && (
+              <Typography color="error" data-testid="freq-error">
+                Invalid frequency
+              </Typography>
+            )}
+          </Box>
+          <Box label="temperature-input">
+            <FilledInput
+              value={temperature}
+              onChange={e => {
+                const temp = parseFloat(e.target.value);
+                if (isNaN(temp)) {
+                  setTemperature('Invalid temperature');
+                } else {
+                  setTemperature(temp);
+                }
+              }}
+              endAdornment={<InputAdornment position="end">°C</InputAdornment>}
+              sx={{ mt: 2, mb: 2, width: 200 }}
+              inputProps={{
+                'aria-label': 'temperature',
+                type: 'number',
+                step: 1,
+              }}
+            />
+            {temperature === 'Invalid temperature' && (
+              <Typography color="error" data-testid="temp-error">
+                Invalid temperature
+              </Typography>
+            )}
+            <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+              Reference temperature: 25°C
             </Typography>
-          )}
-        </Box>
-
-      </Paper>
-
-      <Button variant="contained" sx={{ mt: 2 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
-
+          </Box>
+        </Paper>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
       </Box>
 
       {/*  Results */}
@@ -196,7 +237,7 @@ function App() {
           </Typography>
           {/* Loop resistance pk (max phase + neutral) */}
 
-          {neutralIndex !== null && conductorData[neutralIndex] && (
+          {neutralResistance !== "" && (
             <Typography variant="body1">
               Loop Resistance R<sub>loop,pk</sub>:{' '}
               {(() => {
@@ -223,11 +264,9 @@ function App() {
         {/* Right: Per-phase values */}
         <Box sx={{ flex: 1, minWidth: 250 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Per-phase Values</Typography>
-          {conductorIndices.map((conIdx, idx) => {
+          {conductorArrangements.map((conductor, idx) => {
             if (
-              !rlcResults[idx] ||
-              conductorIndices[idx] === undefined ||
-              propertyIndices[idx] === undefined
+              !rlcResults[idx]
             ) {
               return null;
             }
@@ -244,7 +283,7 @@ function App() {
                     Phase {phase[idx]} 
                   </Typography>
                   <Typography variant="subtitle2">
-                    ({conductorData[conductorIndices[idx]].name}, {conductorProperties[propertyIndices[idx]].type})
+                    {conductorPropertyLabel(conductor)}
                   </Typography>
                 </Box>
                 
@@ -262,18 +301,17 @@ function App() {
               </Box>
             );
           })}
-          {neutralIndex !== null && conductorData[neutralIndex] && (
+          {neutralResistance !== 0 && neutralArrangement !== "" && (
             <Box sx={{ mb: 1, display: 'flex', flexDirection: 'row' }}>
               <Box>
                 <Typography variant="subtitle1">
                   Neutral
                 </Typography>
-                <Typography variant="subtitle2">
-                  ({conductorData[neutralIndex].name}, {conductorProperties[neutralProperty].type})
+                <Typography data-testid="neutral-res" variant="subtitle2">
+                  {conductorPropertyLabel(neutralArrangement)}
                 </Typography>
               </Box>
               <Box>
-                {/* Use same factors as above */}
                 <Typography variant="body2">
                   Resistance R: {(() => {
                     const neutralR = unit === 'mm' ? neutralResistance : neutralResistance * 0.3048;
@@ -281,7 +319,6 @@ function App() {
                     return `${neutralR.toFixed(3)} Ω/${lengthLabel}`;
                   })()}
                 </Typography>
-                {/* L and C for neutral are not typically calculated, but you can add them if needed */}
               </Box>
             </Box>
           )}

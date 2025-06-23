@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Button, ButtonGroup, ToggleButton, FormControlLabel, Switch,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput } from '@mui/material';
 
-import { getRadiusValue } from '../data/conductorUtils';
 
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
-function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = "" }) {
-  const hasNeutral = neutralIndex !== "";
-  const N = conductorIndices.length + (hasNeutral ? 1 : 0);
+function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArrangement = "" }) {
+  // Compose internal array for all conductors (phases + optional neutral)
+  const hasNeutral = neutralArrangement !== "";
+  const allArrangements = hasNeutral
+    ? [...conductorArrangements, neutralArrangement]
+    : conductorArrangements;
+  const N = allArrangements.length;
 
   const [distances, setDistances] = useState(
     Array.from({ length: N }, () => Array(N).fill(0))
@@ -18,7 +21,7 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
   const [manualGmd, setManualGmd] = useState("");
 
   useEffect(() => {
-    const newN = conductorIndices.length + (neutralIndex !== "" ? 1 : 0);
+    const newN = allArrangements.length;
     setDistances(prev => {
       // Expand or shrink the matrix as needed
       let newDistances = prev.slice(0, newN).map(row => row.slice(0, newN));
@@ -31,7 +34,7 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
       });
       return newDistances;
     });
-  }, [conductorIndices.length, neutralIndex]);
+  }, [conductorArrangements.length, neutralArrangement]);
 
   // Conversion factors
   const mmToIn = (mm) => mm / 25.4;
@@ -54,19 +57,10 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
       handleDistanceChange(i, j, value);
     }
   };
-  
-  const getRadius = (idx) => {
-    if (idx < conductorIndices.length) {
-      return getRadiusValue(conductorIndices[idx]);
-    } else if (hasNeutral && idx === conductorIndices.length) {
-      return getRadiusValue(neutralIndex);
-    }
-    return 0;
-  };
 
   const calculateSelfDistance = (idx) => {
-    const r = getRadius(idx); // mm
-    const gmr_mm = r * Math.exp(-0.25);
+    const cond = allArrangements[idx];
+    const gmr_mm = cond.gmr() * 1000; // Convert from meters to mm
     return unit === 'mm' ? gmr_mm.toFixed(4) : mmToIn(gmr_mm).toFixed(4);
   };
 
@@ -75,8 +69,12 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
     let count = 0;
     for (let i = 0; i < N; i++) {
       for (let j = 0; j < N; j++) {
-        if (i === j) continue;
-        if (i < j) {
+        if (i === j) {
+          let d = calculateSelfDistance(i);
+          if (unit === 'in') d = mmToIn(d);
+          distances[i][j] = d;
+        }
+        if (i <= j) {
           let d = parseFloat(distances[i][j]);
           if (isNaN(d) || d <= 0) {
             setGmd('Invalid distances');
@@ -133,14 +131,14 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
               }
               const label =
                 i === j
-                  ? (i < conductorIndices.length
+                  ? (i < conductorArrangements.length
                       ? `GMR${phaseLabel[i]}`
                       : 'GMRn')
-                  : (i < conductorIndices.length
-                      ? (j < conductorIndices.length
+                  : (i < conductorArrangements.length
+                      ? (j < conductorArrangements.length
                           ? `D${phaseLabel[i]}${phaseLabel[j]}`
                           : `Dn${phaseLabel[i]}`)
-                      : (j < conductorIndices.length
+                      : (j < conductorArrangements.length
                           ? `Dn${phaseLabel[i]}`
                           : 'Dnn'));
               return (
@@ -164,9 +162,6 @@ function DistanceMatrix({ gmd, setGmd, conductorIndices, unit, neutralIndex = ""
                       style: { MozAppearance: 'textfield' }
                     }}
                   />
-                  <FormHelperText>
-                    {i === j ? 'Auto (r·e⁻¹/⁴)' : ''}
-                  </FormHelperText>
                 </FormControl>
               );
             })}

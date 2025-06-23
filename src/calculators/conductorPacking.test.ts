@@ -1,8 +1,6 @@
 import { ConductorProperties } from '../data/conductorInterface';
 import { packLayer, packStrandedConductorWithCore, packStrandedConductor } from './conductorPacking';
 
-// src/calculators/conductorPacking.test.ts
-
 const copper: ConductorProperties = {
   type: "Copper",
   temp_reference: 20,
