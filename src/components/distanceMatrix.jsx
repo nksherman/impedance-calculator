@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Button, ButtonGroup, ToggleButton, FormControlLabel, Switch,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput } from '@mui/material';
+import { Button, ButtonGroup, ToggleButton, FormControlLabel, Switch,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput, Tooltip, IconButton } from '@mui/material';
 
 
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
+import GMD from '../math/gmd.jsx';
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
-function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArrangement = "" }) {
+function DistanceMatrix({ gmd, setGmd, conductorArrangements, handlePopoverOpen, unit, neutralArrangement = "" }) {
   // Compose internal array for all conductors (phases + optional neutral)
   const hasNeutral = neutralArrangement !== "";
   const allArrangements = hasNeutral
@@ -70,11 +73,9 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArran
     for (let i = 0; i < N; i++) {
       for (let j = 0; j < N; j++) {
         if (i === j) {
-          let d = calculateSelfDistance(i);
-          if (unit === 'in') d = mmToIn(d);
-          distances[i][j] = d;
+          continue; // Skip self-distances
         }
-        if (i <= j) {
+        if (i < j) {
           let d = parseFloat(distances[i][j]);
           if (isNaN(d) || d <= 0) {
             setGmd('Invalid distances');
@@ -86,6 +87,12 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArran
         }
       }
     }
+    
+    if (count === 0) {
+      setGmd(0);
+      return;
+    }
+
     // For 3 conductors, geometric mean is (D12 * D13 * D23)^(1/3)
     const gmd_mm = Math.pow(product, 1 / count);
     setGmd(gmd_mm);
@@ -105,9 +112,22 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArran
 
   return (
     <Box border={1}>
-      <Typography variant="h6" sx={{ mt: 2 }}>
-        Distances ({displayedUnit}):
-      </Typography>
+      <Box  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+        <Typography variant="h6" >
+          Distances ({displayedUnit}):
+        </Typography>
+        <Tooltip title="equation for GMR">
+          <IconButton
+            aria-label="info"
+            onClick={e => handlePopoverOpen(e, <GMD />)}
+            size="large"
+            sx={{ ml: 1 }}
+          >
+            <InfoOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+
+      </Box>
       <FormControlLabel
         control={
           <Switch
@@ -122,6 +142,32 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArran
         label="Manual GMD override"
         sx={{ mb: 2 }}
       />
+      {manualOverride && (
+        <Box sx={{ ml: 2, minWidth: 220 }}>
+          <FormControl fullWidth>
+            <InputLabel htmlFor="manual-gmd">Manual GMD</InputLabel>
+            <FilledInput
+              id="manual-gmd"
+              value={manualGmd}
+              onChange={handleManualGmdChange}
+              endAdornment={
+                <InputAdornment position="end">{displayedUnit}</InputAdornment>
+              }
+              inputProps={{
+                'aria-label': 'manual-gmd',
+                inputMode: 'decimal',
+                pattern: '[0-9]*[.]?[0-9]*',
+                min: '0',
+                style: { MozAppearance: 'textfield' }
+              }}
+            />
+            <FormHelperText>
+              Enter GMD manually ({displayedUnit})
+            </FormHelperText>
+          </FormControl>
+        </Box>
+
+      )}
       <Box>
         {Array.from({ length: N }).map((_, i) => (
           <Box key={i} sx={{ display: 'flex', mb: 1 }}>
@@ -168,7 +214,7 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArran
           </Box>
         ))}
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: "flex-end", alignItems: 'center', mt: 2 }}>
         <Button
           variant="contained"
           onClick={calculateGMD}
@@ -176,31 +222,6 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, unit, neutralArran
         >
           Calculate GMD
         </Button>
-        <Box sx={{ ml: 2, minWidth: 220 }}>
-          {manualOverride && (
-            <FormControl fullWidth>
-              <InputLabel htmlFor="manual-gmd">Manual GMD</InputLabel>
-              <FilledInput
-                id="manual-gmd"
-                value={manualGmd}
-                onChange={handleManualGmdChange}
-                endAdornment={
-                  <InputAdornment position="end">{displayedUnit}</InputAdornment>
-                }
-                inputProps={{
-                  'aria-label': 'manual-gmd',
-                  inputMode: 'decimal',
-                  pattern: '[0-9]*[.]?[0-9]*',
-                  min: '0',
-                  style: { MozAppearance: 'textfield' }
-                }}
-              />
-              <FormHelperText>
-                Enter GMD manually ({displayedUnit})
-              </FormHelperText>
-            </FormControl>
-          )}
-        </Box>
       </Box>
       {gmd && !isNaN(gmd) && (
         <Typography variant="h6" sx={{ mt: 2 }}>

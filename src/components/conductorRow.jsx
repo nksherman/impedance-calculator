@@ -14,7 +14,7 @@ import QuestionMarkIcon from '@mui/icons-material/HelpOutline';
 import conductorProperties from '../data/conductorProperties.json';
 import conductorData from '../data/conductorData.json';
 
-import GMR from '../math/formula1.jsx';
+import GMR from '../math/gmr.jsx';
 
 function ConductorRow({ 
   conductor, 

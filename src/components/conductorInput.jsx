@@ -17,9 +17,9 @@ import ConductorRow from './conductorRow.jsx';
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
-function ConductorInput({ conductorArrangements, setConductorArrangements, unit }) {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [popoverContent, setPopoverContent] = useState(null);
+function ConductorInput({ 
+  conductorArrangements, setConductorArrangements, handlePopoverOpen, unit
+}) {
 
   const [conductorIndices, setConductorIndices] = useState(() => 
     conductorArrangements.map(() => 0)
@@ -125,17 +125,6 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
   //   setInsulatorThicknesses(newThicknesses);
   // };
 
-  /* handle popout info and formula */  
-
-  const handlePopoverOpen = (event, content) => {
-    setAnchorEl(event.currentTarget);
-    setPopoverContent(content);
-  };
-  const handlePopoverClose = () => {
-    setAnchorEl(null);
-    setPopoverContent(null);
-  };
-
   return (
     <Box>
       {conductorArrangements.map((conductor, idx) => {
@@ -158,8 +147,6 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
               handleConductorChange={(e_val) => handleConductorChange(idx, e_val)}
               handlePropertyChange={(e_val) => handlePropertyChange(idx, e_val)}
               handlePopoverOpen={handlePopoverOpen}
-              handlePopoverClose={handlePopoverClose}
-              handleRemoveConductor={handleRemoveConductor}
             />
           </Box>
         );
@@ -173,26 +160,7 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
       >
         Add Conductor
       </Button>
-
-      {/*  Popover anywhere */}
-      <Popover
-        open={Boolean(anchorEl) && Boolean(popoverContent)}
-        anchorEl={anchorEl}
-        onClose={handlePopoverClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        disableRestoreFocus
-      >
-        {popoverContent}
-      </Popover>
     </Box>
-    
   );
   
 }

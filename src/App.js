@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { Paper,  Box,  ButtonGroup, ToggleButton,  Select, MenuItem, TextField, Button, Typography, InputLabel, FormControl, FilledInput, InputAdornment } from '@mui/material';
+import { Paper,  Box,  ButtonGroup, ToggleButton,  Select, MenuItem, TextField, Button, Typography, InputLabel, FormControl, FilledInput, InputAdornment} from '@mui/material';
 
 import './App.css';
+import Popover from '@mui/material/Popover';
 
 import NeutralInput from './components/neutralInput';
 import ConductorInput from './components/conductorInput';
 import DistanceMatrix from './components/distanceMatrix';
-
-import conductorProperties from './data/conductorProperties.json';
-import conductorData from './data/conductorData.json';
 
 import { createDefaultConductors } from './components/conductorHelpers';
 
@@ -46,7 +44,55 @@ function App() {
   const [gmd, setGmd] = useState(0); // mm 
   const [rlcResults, setRlcResults] = useState([]);
 
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [popoverContent, setPopoverContent] = useState(null);
+
   const calculateRLC = (gmd_mm, frequency) => {
+    // early handle frequency = 0 (DC circuit)
+    if (frequency === 0) {
+      setRlcResults(conductorArrangements.map(conductor => ({
+        R: conductor.resistanceFn()(temperature) * 1000, // ohms per  km
+
+        L: 0, // H/m
+        C: 0, // F/m
+
+      })));
+      setTotalXlpk(0);
+      setTotalXcpk(0);
+      setNeutralResistance(neutralArrangement ? neutralArrangement.resistanceFn()(temperature) * 1000 : 0);
+      return;
+    }
+
+    // early handle gmd = 0 (degenerate case)
+    if (
+      gmd_mm === 0 &&
+      conductorArrangements.length === 1 &&
+      !neutralArrangement
+    ) {
+      const conductor = conductorArrangements[0];
+      const GMR = conductor.gmr();
+      const r_m = conductor.circumscribedRadius();
+      const permeabilityRelative = conductor.effectivePermeability();
+      const resFn = conductor.resistanceFn();
+      const R = resFn(temperature);
+
+      // Use GMR for both GMD and GMR in this degenerate case
+      const L = 0
+      const C = (Math.PI * permissivity_free_space) / Math.log(GMR / r_m);
+
+      const xcpk = frequency? 1 / (2 * Math.PI * frequency * C) : 0; // ohms per km
+
+      setRlcResults([{
+        R: R,
+        L: L,
+        C: C,
+      }]);
+      setTotalXlpk(0);
+      setTotalXcpk(xcpk);
+      setNeutralResistance(0);
+      return;
+    }
+
     const gmd_m = gmd_mm / 1000; // Convert mm to m
 
     const results = conductorArrangements.map((conductor, idx) => {
@@ -107,6 +153,18 @@ function App() {
     return propLabel ? `${conductor.name} (${propLabel})` : conductor.name;
   }
 
+
+  /* handle popout info and formula */  
+
+  const handlePopoverOpen = (event, content) => {
+    setAnchorEl(event.currentTarget);
+    setPopoverContent(content);
+  };
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+    setPopoverContent(null);
+  };
+
   return (
     <Paper className="App" sx={{ p: 4, border: 1 }}>
       <Typography variant="h4" gutterBottom>
@@ -119,6 +177,7 @@ function App() {
             gmd={gmd}
             setGmd={setGmd}
             conductorArrangements={conductorArrangements}
+            handlePopoverOpen={handlePopoverOpen}
             unit={unit}
             neutralArrangement={neutralArrangement}
           />
@@ -128,10 +187,12 @@ function App() {
           <NeutralInput
             neutralArrangement={neutralArrangement}
             setNeutralArrangement={setNeutralArrangement}
+            handlePopoverOpen={handlePopoverOpen}
           />
           <ConductorInput
             conductorArrangements={conductorArrangements}
             setConductorArrangements={setConductorArrangements}
+            handlePopoverOpen={handlePopoverOpen}
             unit={unit}
           />
         </Box>
@@ -168,7 +229,7 @@ function App() {
                 value={frequency}
                 onChange={(e) => {
                   const freq = parseFloat(e.target.value);
-                  if (isNaN(freq) || freq <= 0) {
+                  if (isNaN(freq) || freq < 0) {
                     setFrequency('Invalid frequency');
                   } else {
                     setFrequency(freq);
@@ -324,6 +385,24 @@ function App() {
           )}
         </Box>
       </Box>
+
+      {/*  Popover anywhere */}
+      <Popover
+        open={Boolean(anchorEl) && Boolean(popoverContent)}
+        anchorEl={anchorEl}
+        onClose={handlePopoverClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        disableRestoreFocus
+      >
+        {popoverContent}
+      </Popover>
     </Paper>
   );
 }
