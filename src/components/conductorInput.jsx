@@ -1,20 +1,26 @@
 import React, { useState, useEffect} from 'react';
-import { Box, Select, MenuItem, FormControl, InputLabel, Typography, InputAdornment, TextField, IconButton, Button, FilledInput } from '@mui/material';
+
+import Box from '@mui/material/Box';
+import Popover from '@mui/material/Popover';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import conductorProperties from '../data/conductorProperties.json';
 import conductorData from '../data/conductorData.json';
-import insulatorProperties from '../data/insulatorProperties.json';
 
-import { SolidConductor, StrandedConductor } from './conductor/conductorModel.ts';
-import { createConductor, getConductorDataByName, getPropertiesByType } from './conductorHelpers';
+import { createConductor } from './conductorHelpers';
+
+import ConductorRow from './conductorRow.jsx';
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
 function ConductorInput({ conductorArrangements, setConductorArrangements, unit }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [popoverContent, setPopoverContent] = useState(null);
 
-  // Track selected indices for UI display
   const [conductorIndices, setConductorIndices] = useState(() => 
     conductorArrangements.map(() => 0)
   );
@@ -28,7 +34,6 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
   //   conductorArrangements.map(() => '')
   // );
 
-  // Update indices arrays when conductorArrangements length changes
   useEffect(() => {
     const newLength = conductorArrangements.length;
     setConductorIndices(prev => {
@@ -60,7 +65,6 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
     setConductorArrangements([...conductorArrangements, newConductor]);
   };
 
-
   const handleRemoveConductor = (idx) => {
     setConductorArrangements(conductorArrangements.filter((_, i) => i !== idx));
   };
@@ -77,7 +81,6 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
     updatedArrangements[idx] = newConductor;
     setConductorArrangements(updatedArrangements);
     
-    // Update UI index
     const newIndices = [...conductorIndices];
     newIndices[idx] = value;
     setConductorIndices(newIndices);
@@ -98,7 +101,6 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
       setConductorArrangements(updatedArrangements);
     }
     
-    // Update UI index
     const newProps = [...propertyIndices];
     newProps[idx] = value;
     setPropertyIndices(newProps);
@@ -123,20 +125,20 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
   //   setInsulatorThicknesses(newThicknesses);
   // };
 
+  /* handle popout info and formula */  
+
+  const handlePopoverOpen = (event, content) => {
+    setAnchorEl(event.currentTarget);
+    setPopoverContent(content);
+  };
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+    setPopoverContent(null);
+  };
+
   return (
     <Box>
       {conductorArrangements.map((conductor, idx) => {
-        // Find current conductor data index for UI display
-        const currentConductorIndex = conductorData.findIndex(c => c.name === conductor.name);
-        const currentPropertyIndex = conductorProperties.findIndex(p => p.type === conductor.properties?.type);
-        // Generate unique IDs for accessibility
-        const conductorSelectId = `conductor-select-${idx}`;
-        const conductorLabelId = `conductor-label-${idx}`;
-        const materialSelectId = `material-select-${idx}`;
-        const materialLabelId = `material-label-${idx}`;
-
-        // const insulatorSelectId = `insulator-select-${idx}`;
-        // const insulatorLabelId = `insulator-label-${idx}`;
         return (
           <Box key={idx} sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <IconButton
@@ -149,91 +151,16 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
             >
               <RemoveCircleOutlineIcon />
             </IconButton>
-            <FormControl sx={{ mr: 2, minWidth: 120 }}>
-              <InputLabel id={conductorLabelId}>{`Conductor ${phaseLabel[idx]}`}</InputLabel>
-              <Select
-                labelId={conductorLabelId}
-                id={conductorSelectId}
-                value={currentConductorIndex >= 0 ? currentConductorIndex : 0}
-                label={`Conductor ${phaseLabel[idx]}`}
-                onChange={e => handleConductorChange(idx, e.target.value)}
-              >
-                {conductorData.map((opt, i) => (
-                  <MenuItem key={opt.name} value={i}>{opt.name}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl sx={{ mr: 2, minWidth: 120 }}>
-              <InputLabel id={materialLabelId}>{`Material ${phaseLabel[idx]}`}</InputLabel>
-              <Select
-                labelId={materialLabelId}
-                id={materialSelectId}
-                value={currentPropertyIndex >= 0 ? currentPropertyIndex : 0}
-                label={`Material ${phaseLabel[idx]}`}
-                onChange={e => handlePropertyChange(idx, e.target.value)}
-              >
-                <MenuItem value={""} disabled>none</MenuItem>
-                {conductorProperties.map((opt, i) => (
-                  <MenuItem key={opt.type} value={i}>{opt.type}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            {/* <FormControl sx={{ mr: 2, minWidth: 120 }}>
-              <InputLabel id={insulatorLabelId}>{`Insulator ${phaseLabel[idx]}`}</InputLabel>
-              <Select
-                labelId={insulatorLabelId}
-                id={insulatorSelectId}
-                value={insulatorIndices[idx]}
-                label={`Insulator ${phaseLabel[idx]}`}
-                onChange={e => handleInsulatorChange(idx, e.target.value)}
-              >
-                <MenuItem value={0}>Bare</MenuItem>
-                {insulatorProperties.map((opt, i) => (
-                  <MenuItem key={opt.type} value={i + 1}>{opt.type}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            {insulatorIndices[idx] !== 0 && (
-              <FilledInput
-                value={
-                  // Display in mm or mil (1 mil = 0.0254 mm), but always store in mm
-                  unit === 'mm'
-                    ? (insulatorThicknesses[idx] || '')
-                    : (insulatorThicknesses[idx]
-                        ? (parseFloat(insulatorThicknesses[idx]) / 0.0254).toFixed(2)
-                        : '')
-                }
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (unit === 'mm') {
-                    // Store as mm directly
-                    handleThicknessChange(idx, val);
-                  } else {
-                    // User enters mil (thousandths of an inch), store as mm
-                    if (val === '') {
-                      handleThicknessChange(idx, '');
-                    } else {
-                      const mil = parseFloat(val);
-                      if (!isNaN(mil)) {
-                        const mm = mil * 0.0254;
-                        handleThicknessChange(idx, mm.toString());
-                      }
-                    }
-                  }
-                }}
-                endAdornment={
-                  <InputAdornment position="end">
-                    {unit === 'mm' ? 'mm' : 'mil'}
-                  </InputAdornment>
-                }
-                sx={{ width: 140, mr: 2 }}
-                inputProps={{
-                  'aria-label': `Insulator Thickness ${phaseLabel[idx]}`,
-                  min: 0,
-                  step: 0.01
-                }}
-              />
-            )} */}
+            <ConductorRow
+              key={idx}
+              conductor={conductor}
+              rowName={phaseLabel[idx]}
+              handleConductorChange={(e_val) => handleConductorChange(idx, e_val)}
+              handlePropertyChange={(e_val) => handlePropertyChange(idx, e_val)}
+              handlePopoverOpen={handlePopoverOpen}
+              handlePopoverClose={handlePopoverClose}
+              handleRemoveConductor={handleRemoveConductor}
+            />
           </Box>
         );
       })}
@@ -246,8 +173,28 @@ function ConductorInput({ conductorArrangements, setConductorArrangements, unit 
       >
         Add Conductor
       </Button>
+
+      {/*  Popover anywhere */}
+      <Popover
+        open={Boolean(anchorEl) && Boolean(popoverContent)}
+        anchorEl={anchorEl}
+        onClose={handlePopoverClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        disableRestoreFocus
+      >
+        {popoverContent}
+      </Popover>
     </Box>
+    
   );
+  
 }
 
 

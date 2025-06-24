@@ -12,7 +12,7 @@ import conductorProperties from '../data/conductorProperties.json';
 export function createConductor(condData, properties) {
   // Convert diameters from mm to meters
   const strandRadiusM = (condData.strand_dia / 1000) / 2;
-  const outerRadiusM = (condData.outer_diam / 1000) / 2;
+  const outerRadiusM = (condData.outer_dia / 1000) / 2;
 
   if (condData.strand_count === 1) {
     // Solid conductor

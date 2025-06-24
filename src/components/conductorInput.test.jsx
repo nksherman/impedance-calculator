@@ -3,8 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import ConductorInput from './conductorInput';
 
 jest.mock('../data/conductorData.json', () => ([
-  { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_diam: 3.3 },
-  { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_diam: 4.5 },
+  { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_dia: 3.3 },
+  { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_dia: 4.5 },
 ]));
 
 jest.mock('../data/conductorProperties.json', () => ([
@@ -27,7 +27,7 @@ describe('ConductorInput', () => {
 
   beforeEach(() => {
     conductorArrangements = [
-      { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_diam: 3.3, properties: { type: 'Copper' } },
+      { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_dia: 3.3, properties: { type: 'Copper' } },
     ];
     setConductorArrangements = jest.fn();
   });
@@ -43,7 +43,7 @@ describe('ConductorInput', () => {
   }
 
   it('add conductor row up to 4 and disables button at 4', () => {
-    const arr = Array(4).fill({ name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_diam: 3.3, properties: { type: 'Copper' } });
+    const arr = Array(4).fill({ name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_dia: 3.3, properties: { type: 'Copper' } });
     setup(arr);
     const addBtn = screen.getByRole('button', { name: /add conductor/i });
     expect(addBtn).toBeDisabled();
@@ -51,8 +51,8 @@ describe('ConductorInput', () => {
 
   it('add conductor row increases rows', () => {
     const arr = [
-      { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_diam: 3.3, properties: { type: 'Copper' } },
-      { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_diam: 4.5, properties: { type: 'Copper' } },
+      { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_dia: 3.3, properties: { type: 'Copper' } },
+      { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_dia: 4.5, properties: { type: 'Copper' } },
     ];
     setup(arr);
     const addBtn = screen.getByRole('button', { name: /add conductor/i });
@@ -65,8 +65,8 @@ describe('ConductorInput', () => {
 
   it('remove conductor row decreases rows, disables at 1', () => {
     const arr = [
-      { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_diam: 3.3, properties: { type: 'Copper' } },
-      { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_diam: 4.5, properties: { type: 'Copper' } },
+      { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_dia: 3.3, properties: { type: 'Copper' } },
+      { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_dia: 4.5, properties: { type: 'Copper' } },
     ];
     setup(arr);
     const removeBtns = screen.getAllByLabelText('remove');

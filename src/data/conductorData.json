@@ -1,10 +1,10 @@
 [
-  { "name": "1 AWG", "strand_count": 1, "strand_dia": 7.34822, "outer_diam": 7.34822 },
-  { "name": "1/0 AWG", "strand_count": 1, "strand_dia": 8.25246, "outer_diam": 8.25246 },
-  { "name": "2/0 AWG", "strand_count": 1, "strand_dia": 9.26592, "outer_diam": 9.26592 },
-  { "name": "3/0 AWG", "strand_count": 1, "strand_dia": 10.040384, "outer_diam": 10.40384 },
-  { "name": "4/0 AWG", "strand_count": 1, "strand_dia": 11.684, "outer_diam": 11.684 },
-  { "name": "1-7 concentric", "strand_count": 7, "strand_dia": 2.7686, "outer_diam": 8.3312 },
-  { "name": "1/0-7 concentric", "strand_count": 7, "strand_dia": 3.1242, "outer_diam": 9.3472 },
-  { "name": "2/0-7 concentric", "strand_count": 7, "strand_dia": 3.5052, "outer_diam": 10.5156 }
+  { "name": "1 AWG", "strand_count": 1, "strand_dia": 7.34822, "outer_dia": 7.34822 },
+  { "name": "1/0 AWG", "strand_count": 1, "strand_dia": 8.25246, "outer_dia": 8.25246 },
+  { "name": "2/0 AWG", "strand_count": 1, "strand_dia": 9.26592, "outer_dia": 9.26592 },
+  { "name": "3/0 AWG", "strand_count": 1, "strand_dia": 10.040384, "outer_dia": 10.40384 },
+  { "name": "4/0 AWG", "strand_count": 1, "strand_dia": 11.684, "outer_dia": 11.684 },
+  { "name": "1-7 concentric", "strand_count": 7, "strand_dia": 2.7686, "outer_dia": 8.3312 },
+  { "name": "1/0-7 concentric", "strand_count": 7, "strand_dia": 3.1242, "outer_dia": 9.3472 },
+  { "name": "2/0-7 concentric", "strand_count": 7, "strand_dia": 3.5052, "outer_dia": 10.5156 }
 ]

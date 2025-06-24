@@ -36,8 +36,8 @@ describe('SolidConductor', () => {
     const fn = sc.resistanceFn();
     const r20 = fn(20);
     const r30 = fn(30);
-    expect(r20).toBeCloseTo(0.0000000168 * Math.PI * 0.01 * 0.01, 8);
-    expect(r30).toBeGreaterThan(r20);
+    expect(r20).toBeCloseTo(0.0000000168 / (Math.PI * 0.01 * 0.01), 8);
+    expect(r30).toBeCloseTo(0.0000000168 / (Math.PI * 0.01 * 0.01) * Math.pow(1 + 0.00393 * (30 - 20), 1), 8);
   });
 
   it('should calculate gmr correctly', () => {
@@ -63,15 +63,6 @@ describe('StrandedConductor', () => {
     const stranded = new StrandedConductor('stranded', 1, 0.01, copper);
 
     const arrangement = stranded['arrangement'];
-
-    console.log("test stranded", stranded.circumscribedRadius(),arrangement)
-    console.log("Arrangement: ", arrangement.map(s => ({
-      r: s.r,
-      theta: s.theta,
-      radius: s.radius,
-      properties: s.properties.type
-    }))
-    )
 
     expect(stranded.circumscribedRadius()).toBeCloseTo(solid.circumscribedRadius(), 8);
     expect(stranded.surfaceArea()).toBeCloseTo(solid.surfaceArea(), 8);
@@ -119,8 +110,8 @@ describe('StrandedConductor', () => {
     const fn = sc.resistanceFn();
     const r20 = fn(20);
     const r30 = fn(30);
-    expect(r20).toBeCloseTo(3 * 0.0000000168 * Math.PI * 0.01 * 0.01, 8);
-    expect(r30).toBeGreaterThan(r20);
+    expect(r20).toBeCloseTo( 0.0000000168 / ( 3 * Math.PI * 0.01 * 0.01), 8);
+    expect(r30).toBeCloseTo(0.0000000168 / (3 * Math.PI * 0.01 * 0.01) * Math.pow(1 + 0.00393 * (30 - 20), 1), 8);
   });
 
   it('should calculate resistanceFn for mixed materials', () => {
