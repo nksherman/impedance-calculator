@@ -7,8 +7,6 @@ import Button from '@mui/material/Button';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
-import conductorProperties from '../data/conductorProperties.json';
-import conductorData from '../data/conductorData.json';
 
 import { createConductor } from './conductorHelpers';
 
@@ -17,7 +15,11 @@ import ConductorRow from './conductorRow.jsx';
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 
 function ConductorInput({ 
-  conductorArrangements, setConductorArrangements, handlePopoverOpen, unit
+  conductorArrangements,
+  setConductorArrangements, 
+  handlePopoverOpen,
+  conductorData,
+  conductorProperties
 }) {
 
   const [conductorIndices, setConductorIndices] = useState(() => 
@@ -146,6 +148,8 @@ function ConductorInput({
               handleConductorChange={(e_val) => handleConductorChange(idx, e_val)}
               handlePropertyChange={(e_val) => handlePropertyChange(idx, e_val)}
               handlePopoverOpen={handlePopoverOpen}
+              conductorData={conductorData}
+              conductorProperties={conductorProperties}
             />
           </Box>
         );

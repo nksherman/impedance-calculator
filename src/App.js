@@ -28,6 +28,9 @@ import DistanceMatrix from './components/distanceMatrix';
 
 import { createDefaultConductors } from './components/conductorHelpers';
 
+import defaultConductorData from './data/conductorData.json';
+import defaultConductorProperties from './data/conductorProperties.json';
+
 const permeability_of_free_space = 4 * Math.PI * 0.0000001; // H/m
 const permissivity_free_space = 8.854*0.000000000001; // F/m
 
@@ -44,7 +47,11 @@ function formatValue(val, digits = 3) {
 
 function App() {
   const [neutralArrangement, setNeutralArrangement] = useState("");
-  const [conductorArrangements, setConductorArrangements] = useState(() => createDefaultConductors(3));
+  const [conductorArrangements, setConductorArrangements] = useState(() => createDefaultConductors(3, defaultConductorData, defaultConductorProperties));
+
+  const [conductorData, setConductorData] = useState(defaultConductorData)
+  const [conductorProperties, setConductorProperties] = useState(defaultConductorProperties);
+
 
   const [unit, setUnit] = useState('mm'); // 'mm' or 'in'
   const [frequency, setFrequency] = useState(60); // Default frequency in Hz
@@ -204,13 +211,15 @@ function App() {
           <NeutralInput
             neutralArrangement={neutralArrangement}
             setNeutralArrangement={setNeutralArrangement}
-            handlePopoverOpen={handlePopoverOpen}
+            conductorData={conductorData}
+            conductorProperties={conductorProperties}
           />
           <ConductorInput
             conductorArrangements={conductorArrangements}
             setConductorArrangements={setConductorArrangements}
             handlePopoverOpen={handlePopoverOpen}
-            unit={unit}
+            conductorData={conductorData}
+            conductorProperties={conductorProperties}
           />
         </Box>
       </Box>

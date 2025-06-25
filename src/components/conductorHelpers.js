@@ -1,7 +1,5 @@
 // Helper functions for creating conductors from data
 import { SolidConductor, StrandedConductor } from './conductor/conductorModel.ts';
-import conductorData from '../data/conductorData.json';
-import conductorProperties from '../data/conductorProperties.json';
 
 /**
  * Create a conductor from conductor data and properties
@@ -40,7 +38,7 @@ export function createConductor(condData, properties) {
  * Create default conductor arrangements
  * @returns {Array} Array of default conductors
  */
-export function createDefaultConductors(count=1) {
+export function createDefaultConductors(count=1, conductorData, conductorProperties) {
   const defaultConductorData = conductorData[0]; // First conductor in the list
   const defaultProperties = conductorProperties[0]; // First material (usually copper)
 
@@ -55,7 +53,7 @@ export function createDefaultConductors(count=1) {
  * @param {string} name - Conductor name
  * @returns {Object} Conductor data object
  */
-export function getConductorDataByName(name) {
+export function getConductorDataByName(name, conductorData) {
   return conductorData.find(c => c.name === name);
 }
 
@@ -64,6 +62,6 @@ export function getConductorDataByName(name) {
  * @param {string} type - Material type
  * @returns {Object} Properties object
  */
-export function getPropertiesByType(type) {
+export function getPropertiesByType(type, conductorProperties) {
   return conductorProperties.find(p => p.type === type);
 }

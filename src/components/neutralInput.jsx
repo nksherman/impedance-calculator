@@ -7,12 +7,13 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 
-import conductorProperties from '../data/conductorProperties.json';
-import conductorData from '../data/conductorData.json';
 import { createConductor } from './conductorHelpers';
 
 function NeutralInput({ 
-  neutralArrangement, setNeutralArrangement
+  neutralArrangement, 
+  setNeutralArrangement,
+  conductorData,
+  conductorProperties
 }) {
   const [neutralType, setNeutralType] = useState('MGN'); // or MGN
 
@@ -32,7 +33,7 @@ function NeutralInput({
       const defaultConductor = createConductor(conductorData[0], conductorProperties[0]);
       setNeutralArrangement(defaultConductor);
     }
-  }, [neutralType, setNeutralArrangement, neutralArrangement]);
+  }, [neutralType, setNeutralArrangement, neutralArrangement, conductorData, conductorProperties]);
 
   const handleConductorChange = (idx) => {
     const selectedConductorData = conductorData[idx];
