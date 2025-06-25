@@ -1,5 +1,5 @@
 import { gmr } from "../../calculators/gmr";
-import  { ConductorProperties, ConductorData, ConductorDataWithCore, insulatorType, RadialCoordinate, RadialConductor } from "../../data/conductorInterface";
+import  { ConductorProperties, RadialCoordinate, RadialConductor } from "../../data/conductorInterface";
 
 import { packStrandedConductorWithCore, packStrandedConductor } from "../../calculators/conductorPacking.ts";
 

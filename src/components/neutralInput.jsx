@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Paper, Box, Select, MenuItem, FormControl, InputLabel, Typography } from '@mui/material';
+
+import Box from '@mui/material/Box';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Typography from '@mui/material/Typography';
 
 import conductorProperties from '../data/conductorProperties.json';
 import conductorData from '../data/conductorData.json';

@@ -1,8 +1,26 @@
 import React, { useState } from 'react';
-import { Paper,  Box,  ButtonGroup, ToggleButton,  Select, MenuItem, TextField, Button, Typography, InputLabel, FormControl, FilledInput, InputAdornment} from '@mui/material';
+
+import Paper from '@mui/material/Paper';
+import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import ToggleButton from '@mui/material/ToggleButton';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import FilledInput from '@mui/material/FilledInput';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import './App.css';
 import Popover from '@mui/material/Popover';
+
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
+import Inductance from './math/inductance.jsx';
+import Resistance from './math/resistance.jsx';
+import ResistanceLoop from './math/resistanceLoop.jsx';
+import Capacitance from './math/capacitance.jsx';
+import ReactanceInductance from './math/reactanceInductance.jsx';
+import ReactanceCapacitance from './math/reactanceCapacitance.jsx';
 
 import NeutralInput from './components/neutralInput';
 import ConductorInput from './components/conductorInput';
@@ -72,13 +90,12 @@ function App() {
       const conductor = conductorArrangements[0];
       const GMR = conductor.gmr();
       const r_m = conductor.circumscribedRadius();
-      const permeabilityRelative = conductor.effectivePermeability();
       const resFn = conductor.resistanceFn();
       const R = resFn(temperature);
 
       // Use GMR for both GMD and GMR in this degenerate case
       const L = 0
-      const C = (Math.PI * permissivity_free_space) / Math.log(GMR / r_m);
+      const C = (2 * Math.PI * permissivity_free_space) / Math.log(GMR / r_m);
 
       const xcpk = frequency? 1 / (2 * Math.PI * frequency * C) : 0; // ohms per km
 
@@ -105,8 +122,8 @@ function App() {
       // Temperature correction for resistivity
       const R = resFn(temperature);
       const L = permeabilityRelative * permeability_of_free_space / (2*Math.PI) * Math.log(gmd_m / GMR); // H/m
-      const C = (Math.PI * permissivity_free_space) / Math.log(gmd_m / r_m); // F/m
-      
+      const C = (2 * Math.PI * permissivity_free_space) / Math.log(gmd_m / r_m); // F/m
+
       return {
         R: R, // all per/m
         L: L,
@@ -289,37 +306,70 @@ function App() {
         <Box sx={{ flex: 1, minWidth: 250 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Summary</Typography>
           {/* Max phase resistance pk */}
-          <Typography variant="body1">
-            Max Phase Resistance R<sub>pk</sub>: {(() => {
-              const rFactor = unit === 'mm' ? 1000 : 304.8;
-              const maxR = Math.max(...rlcResults.map(res => res?.R ?? 0));
-              return `${(maxR * rFactor).toFixed(3)} Ω/${unit === 'mm' ? 'km' : 'kft'}`;
-            })()}
-          </Typography>
-          {/* Loop resistance pk (max phase + neutral) */}
 
-          {neutralResistance !== "" && (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
             <Typography variant="body1">
-              Loop Resistance R<sub>loop,pk</sub>:{' '}
-              {(() => {
+              Max Phase Resistance R<sub>pk</sub>: {(() => {
                 const rFactor = unit === 'mm' ? 1000 : 304.8;
                 const maxR = Math.max(...rlcResults.map(res => res?.R ?? 0));
-                if (neutralResistance > 0) {
-                  // neutralResistance is in ohms per km, convert if needed
-                  const neutralR = unit === 'mm' ? neutralResistance : neutralResistance * 0.3048;
-                  const loopR = maxR * rFactor + neutralR;
-                  return `${loopR.toFixed(3)} Ω/${unit === 'mm' ? 'km' : 'kft'}`;
-                }
-                return 'N/A';
+                return `${(maxR * rFactor).toFixed(3)} Ω/${unit === 'mm' ? 'km' : 'kft'}`;
               })()}
             </Typography>
+          </Box>
+          {/* Loop resistance pk (max phase + neutral) */}
+          {neutralResistance !== "" && (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left'}}>
+              <Typography variant="body1">
+                Loop Resistance R<sub>loop,pk</sub>:{' '}
+                {(() => {
+                  const rFactor = unit === 'mm' ? 1000 : 304.8;
+                  const maxR = Math.max(...rlcResults.map(res => res?.R ?? 0));
+                  if (neutralResistance > 0) {
+                    // neutralResistance is in ohms per km, convert if needed
+                    const neutralR = unit === 'mm' ? neutralResistance : neutralResistance * 0.3048;
+                    const loopR = maxR * rFactor + neutralR;
+                    return `${loopR.toFixed(3)} Ω/${unit === 'mm' ? 'km' : 'kft'}`;
+                  }
+                  return 'N/A';
+                })()}
+              </Typography>
+
+              <IconButton
+                sx={{ p: 0 }}
+                aria-label="info"
+                color="primary"
+                onClick={(e) => handlePopoverOpen(e, <ResistanceLoop />)}
+              >
+                <InfoOutlinedIcon />
+              </IconButton>
+            </Box>
           )}
-          <Typography variant="body1">
-            Total Inductive Reactance XL<sub>pk</sub>: {formatValue(unit === 'mm' ? totalXlpk : totalXlpk * 0.3048)} Ω/{unit === 'mm' ? 'km' : 'kft'}
-          </Typography>
-          <Typography variant="body1">
-            Total Capacitive Reactance XC<sub>pk</sub>: {formatValue(unit === 'mm' ? totalXcpk : totalXcpk * 0.3048)} Ω/{unit === 'mm' ? 'km' : 'kft'}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left'}}>
+            <Typography variant="body1">
+              Total Inductive Reactance XL<sub>pk</sub>: {formatValue(unit === 'mm' ? totalXlpk : totalXlpk * 0.3048)} Ω/{unit === 'mm' ? 'km' : 'kft'}
+            </Typography>
+            <IconButton
+              sx={{ p: 0 }}
+              aria-label="info"
+              color="primary"
+              onClick={(e) => handlePopoverOpen(e, <ReactanceInductance/>)}
+            >
+              <InfoOutlinedIcon />
+            </IconButton>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+            <Typography variant="body1">
+              Total Capacitive Reactance XC<sub>pk</sub>: {formatValue(unit === 'mm' ? totalXcpk : totalXcpk * 0.3048)} Ω/{unit === 'mm' ? 'km' : 'kft'}
+            </Typography>
+            <IconButton
+              sx={{ p: 0 }}
+              aria-label="info"
+              color="primary"
+              onClick={(e) => handlePopoverOpen(e, <ReactanceCapacitance/>)}
+            >
+              <InfoOutlinedIcon />
+            </IconButton>
+          </Box>
         </Box>
 
         {/* Right: Per-phase values */}
@@ -349,15 +399,45 @@ function App() {
                 </Box>
                 
                 <Box>
-                  <Typography variant="body2">
-                    Resistance R: {(rlcResults[idx].R * rFactor).toFixed(3)} Ω/{lengthLabel}
-                  </Typography>
-                  <Typography variant="body2">
-                    Inductance L: {formatValue(rlcResults[idx].L * lFactor)} H/{lengthLabel}
-                  </Typography>
-                  <Typography variant="body2">
-                    Capacitance C: {formatValue(rlcResults[idx].C * cFactor)} F/{lengthLabel}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                    <Typography variant="body2">
+                      Resistance R: {(rlcResults[idx].R * rFactor).toFixed(3)} Ω/{lengthLabel}
+                    </Typography>
+                    <IconButton
+                      sx={{ p: 0 }}
+                      aria-label="info"
+                      color="primary"
+                      onClick={(e) => handlePopoverOpen(e, <Resistance/>)}
+                    >
+                      <InfoOutlinedIcon />
+                    </IconButton>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                    <Typography variant="body2">
+                      Inductance L: {formatValue(rlcResults[idx].L * lFactor)} H/{lengthLabel}
+                    </Typography>
+                    <IconButton
+                      sx={{ p: 0 }}
+                      aria-label="info"
+                      color="primary"
+                      onClick={(e) => handlePopoverOpen(e, <Inductance/>)}
+                    >
+                      <InfoOutlinedIcon />
+                    </IconButton>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                    <Typography variant="body2">
+                      Capacitance C: {formatValue(rlcResults[idx].C * cFactor)} F/{lengthLabel}
+                    </Typography>
+                    <IconButton
+                      sx={{ p: 0 }}
+                      aria-label="info"
+                      color="primary"
+                      onClick={(e) => handlePopoverOpen(e, <Capacitance/>)}
+                    >
+                      <InfoOutlinedIcon />
+                    </IconButton>
+                  </Box>
                 </Box>
               </Box>
             );

@@ -1,5 +1,4 @@
-import  { ConductorProperties, RadialCoordinate, RadialConductor, ConductorData, ConductorDataWithCore, insulatorType } from "../data/conductorInterface.ts";
-
+import  {  ConductorProperties, RadialConductor } from "../data/conductorInterface.ts";
 
 // predefined patterns for packing conductors in a radial arrangement
 const patternsTotal = {
@@ -89,7 +88,7 @@ function closePackedCore(strands: number, radius: number, properties: ConductorP
     arrangement.push({ r: rad, theta: (2 * Math.PI) / 3, radius, properties });
     arrangement.push({ r: rad, theta: 0, radius, properties });
     arrangement.push({ r: rad, theta: 2*(2 * Math.PI) / 3, radius, properties });
-  } else if (strandsLeft == 4 ) {
+  } else if (strandsLeft === 4 ) {
     const rad = radius * Math.sqrt(8);
     circumRad = rad + radius;
     arrangement.push({ r: rad, theta: 0, radius, properties });

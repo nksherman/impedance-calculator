@@ -1,6 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Button, ButtonGroup, ToggleButton, FormControlLabel, Switch,  Box, Typography, InputAdornment, FormControl, FormHelperText, InputLabel, FilledInput, Tooltip, IconButton } from '@mui/material';
+import React, { useState, useMemo, useEffect } from 'react';
 
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
+import InputLabel from '@mui/material/InputLabel';
+import FilledInput from '@mui/material/FilledInput';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
@@ -11,9 +22,15 @@ const phaseLabel  = ['A', 'B', 'C', 'D'];
 function DistanceMatrix({ gmd, setGmd, conductorArrangements, handlePopoverOpen, unit, neutralArrangement = "" }) {
   // Compose internal array for all conductors (phases + optional neutral)
   const hasNeutral = neutralArrangement !== "";
-  const allArrangements = hasNeutral
-    ? [...conductorArrangements, neutralArrangement]
-    : conductorArrangements;
+
+  const allArrangements = useMemo(
+    () =>
+      hasNeutral
+        ? [...conductorArrangements, neutralArrangement]
+        : conductorArrangements,
+    [conductorArrangements, neutralArrangement, hasNeutral]
+  );
+
   const N = allArrangements.length;
 
   const [distances, setDistances] = useState(
@@ -37,7 +54,7 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, handlePopoverOpen,
       });
       return newDistances;
     });
-  }, [conductorArrangements.length, neutralArrangement]);
+  }, [allArrangements]);
 
   // Conversion factors
   const mmToIn = (mm) => mm / 25.4;
@@ -87,7 +104,7 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, handlePopoverOpen,
         }
       }
     }
-    
+
     if (count === 0) {
       setGmd(0);
       return;
@@ -215,19 +232,19 @@ function DistanceMatrix({ gmd, setGmd, conductorArrangements, handlePopoverOpen,
         ))}
       </Box>
       <Box sx={{ display: 'flex', justifyContent: "flex-end", alignItems: 'center', mt: 2 }}>
+        {gmd && !isNaN(gmd) && (
+          <Typography variant="h6" sx={{ mr: 4 }}>
+            {`GMD = ${gmd.toFixed(4)} mm (${mmToIn(gmd).toFixed(4)} in)`}
+          </Typography>
+        )}
         <Button
           variant="contained"
           onClick={calculateGMD}
           disabled={manualOverride}
         >
-          Calculate GMD
+          Update GMD
         </Button>
       </Box>
-      {gmd && !isNaN(gmd) && (
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          {`GMD = ${gmd.toFixed(4)} mm (${mmToIn(gmd).toFixed(4)} in)`}
-        </Typography>
-      )}
       {gmd === 'Invalid distances' && (
         <Typography color="error" sx={{ mt: 2 }}>Invalid distances</Typography>
       )}
