@@ -25,6 +25,7 @@ import ReactanceCapacitance from './math/reactanceCapacitance.jsx';
 import NeutralInput from './components/neutralInput';
 import ConductorInput from './components/conductorInput';
 import DistanceMatrix from './components/distanceMatrix';
+import DataSetter from './components/dataSetter';
 
 import { createDefaultConductors } from './components/conductorHelpers';
 
@@ -307,6 +308,12 @@ function App() {
           </Box>
         </Paper>
         <Button variant="contained" sx={{ mt: 2 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
+        <DataSetter
+          conductorData={conductorData}
+          setConductorData={setConductorData}
+          conductorProperties={conductorProperties}
+          setConductorProperties={setConductorProperties} 
+        />
       </Box>
 
       {/*  Results */}

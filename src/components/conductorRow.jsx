@@ -30,12 +30,12 @@ function ConductorRow({
           <>
             <Typography variant="body1"><strong>Name:</strong> {data.name}</Typography>
             <Typography variant="body1"><strong>Strands:</strong> {data.strand_count}</Typography>
-            <Typography variant="body1"><strong>Strand dia:</strong> {data.strand_dia ?? data.stand_dia} mm</Typography>
+            <Typography variant="body1"><strong>Strand dia:</strong> {data.strand_dia ?? data.strand_dia} mm</Typography>
             <Typography variant="body1"><strong>Outer dia:</strong> {data.outer_dia} mm</Typography>
             {'core_strand_count' in data && (
               <>
                 <Typography variant="body1"><strong>Core Strands:</strong> {data.core_strand_count}</Typography>
-                <Typography variant="body1"><strong>Core Strand Dia:</strong> {data.core_strand_dia ?? data.core_stand_dia} mm</Typography>
+                <Typography variant="body1"><strong>Core Strand Dia:</strong> {data.core_strand_dia ?? data.core_strand_dia} mm</Typography>
               </>
             )}
             <Box sx={{ mb: 1 }} />

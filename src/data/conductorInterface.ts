@@ -21,13 +21,13 @@ export interface RadialConductor extends RadialCoordinate {
 export interface ConductorData {
   name: string; // Name of the conductor
   strand_count: number; // Number of strands in the conductor
-  stand_dia: number; // Diameter of a single strand in mm
+  strand_dia: number; // Diameter of a single strand in mm
   outer_dia: number; // Outer diameter of the conductor in mm
 }
 
 export interface ConductorDataWithCore extends ConductorData {
   core_strand_count: number; // Number of strands in the core conductor
-  core_stand_dia: number; // Diameter of a single strand in the core conductor
+  core_strand_dia: number; // Diameter of a single strand in the core conductor
 }
 
 export interface insulatorType {
