@@ -22,7 +22,7 @@ Actual resistance and reactance will vary because of
 
 ## Live Demo
 
-Access the app here: [Impedance Calculator on GitHub Pages](https://yourusername.github.io/impedance_calculator)
+Access the app here: [Impedance Calculator on GitHub Pages](https://nksherman.github.io/impedance-calculator/)
 
 ## Running Locally
 
