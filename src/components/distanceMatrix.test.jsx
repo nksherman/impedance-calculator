@@ -48,10 +48,10 @@ describe('DistanceMatrix integration and calculation', () => {
     fireEvent.change(screen.getByLabelText('DAB'), { target: { value: '100' } });
     fireEvent.change(screen.getByLabelText('DAC'), { target: { value: '200' } });
     fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '300' } });
-    fireEvent.click(screen.getByText('Calculate GMD'));
+    fireEvent.click(screen.getByText('Update GMD'));
     expect(setGmd).toHaveBeenCalled();
     const calledWith = setGmd.mock.calls[0][0];
-    expect(calledWith).toBeCloseTo(1817.1205, 2);
+    expect(calledWith).toBeCloseTo(181.71205, 2);
   });
 
   it('shows error if any distance is invalid or <= 0', () => {
@@ -59,7 +59,7 @@ describe('DistanceMatrix integration and calculation', () => {
     fireEvent.change(screen.getByLabelText('DAB'), { target: { value: '-5' } });
     fireEvent.change(screen.getByLabelText('DAC'), { target: { value: '200' } });
     fireEvent.change(screen.getByLabelText('DBC'), { target: { value: '300' } });
-    fireEvent.click(screen.getByText('Calculate GMD'));
+    fireEvent.click(screen.getByText('Update GMD'));
     expect(setGmd).toHaveBeenCalledWith('Invalid distances');
   });
 
@@ -132,7 +132,7 @@ describe('When Using the Neutral Conductor', () => {
     fireEvent.change(screen.getByLabelText('DnA'), { target: { value: '150' } });
     fireEvent.change(screen.getByLabelText('DnB'), { target: { value: '200' } });
     fireEvent.change(screen.getByLabelText('DnC'), { target: { value: '210' } });
-    fireEvent.click(screen.getByText('Calculate GMD'));
+    fireEvent.click(screen.getByText('Update GMD'));
     expect(setGmd).toHaveBeenCalledWith(expect.any(Number));
   });
 });

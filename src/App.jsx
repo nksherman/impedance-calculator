@@ -22,12 +22,12 @@ import Capacitance from './math/capacitance.jsx';
 import ReactanceInductance from './math/reactanceInductance.jsx';
 import ReactanceCapacitance from './math/reactanceCapacitance.jsx';
 
-import NeutralInput from './components/neutralInput';
-import ConductorInput from './components/conductorInput';
-import DistanceMatrix from './components/distanceMatrix';
-import DataSetter from './components/dataSetter';
+import NeutralInput from './components/neutralInput.jsx';
+import ConductorInput from './components/conductorInput.jsx';
+import DistanceMatrix from './components/distanceMatrix.jsx';
+import DataSetter from './components/dataSetter.jsx';
 
-import { createDefaultConductors } from './components/conductorHelpers';
+import { createDefaultConductors } from './components/conductorHelpers.js';
 
 import defaultConductorData from './data/conductorData.json';
 import defaultConductorProperties from './data/conductorProperties.json';
@@ -307,13 +307,15 @@ function App() {
             </Typography>
           </Box>
         </Paper>
-        <Button variant="contained" sx={{ mt: 2 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
-        <DataSetter
-          conductorData={conductorData}
-          setConductorData={setConductorData}
-          conductorProperties={conductorProperties}
-          setConductorProperties={setConductorProperties} 
-        />
+        <Box sx={{ flex: 1, minWidth: 250, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <DataSetter
+            conductorData={conductorData}
+            setConductorData={setConductorData}
+            conductorProperties={conductorProperties}
+            setConductorProperties={setConductorProperties} 
+          />
+          <Button variant="contained" sx={{ mt: 2, width: 220 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
+        </Box>
       </Box>
 
       {/*  Results */}

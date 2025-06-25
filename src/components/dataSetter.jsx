@@ -4,8 +4,12 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+
 import DownloadIcon from '@mui/icons-material/Download';
 import UploadIcon from '@mui/icons-material/Upload';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 // Cannot import ts interfaces for reasons
 const ConductorDataModel = {
@@ -94,9 +98,19 @@ function DataSetter({
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Import/Export Conductor Data
-      </Typography>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Typography variant="h6" gutterBottom>
+          Import/Export Conductor Data
+        </Typography>
+        <IconButton
+          color="primary"
+          aria-label="info"
+        >
+          <Tooltip title="Edit json with notepad or similar editor">
+            <InfoOutlinedIcon />
+          </Tooltip>
+        </IconButton>
+      </Box>
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Button
           variant="outlined"
