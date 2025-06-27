@@ -7,10 +7,12 @@ import { SolidConductor, StrandedConductor } from './conductor/conductorModel.ts
  * @param {Object} properties - Material properties (from conductorProperties.json)
  * @returns {SolidConductor | StrandedConductor}
  */
-export function createConductor(condData, properties) {
+export function createConductor(condData, properties, coreProperties = null) {
   // Convert diameters from mm to meters
   const strandRadiusM = (condData.strand_dia / 1000) / 2;
   const outerRadiusM = (condData.outer_dia / 1000) / 2;
+
+  const coreStrandRadiusM = coreProperties ? (condData.core_strand_dia / 1000) / 2 : undefined;
 
   if (condData.strand_count === 1) {
     // Solid conductor
@@ -26,9 +28,9 @@ export function createConductor(condData, properties) {
       condData.strand_count,
       strandRadiusM,
       properties,
-      undefined, // no core strands
-      undefined, // no core radius
-      undefined, // no core properties
+      condData?.core_strand_count,
+      coreStrandRadiusM,
+      coreProperties,
       outerRadiusM
     );
   }

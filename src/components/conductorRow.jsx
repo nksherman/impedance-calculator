@@ -17,26 +17,32 @@ import ConductorStrandGraphic from './conductor/conductorStrandGraphic';
 
 import { SolidConductor, StrandedConductor } from './conductor/conductorModel.ts';
 
+/**
+ * ConductorRow component displays information about a single conductor.
+ * 
+ * @param {SolidConductor | StrandedConductor} conductor
+ * @param {string} rowName - Name of the row (e.g., "A", "B", etc.)
+ * @param {function} handleConductorChange - Callback to handle conductor selection change
+ * @param {function} handlePropertyChange - Callback to handle material property selection change
+ * @param {function} handleCorePropertyChange - Callback to handle core material property selection change
+ * @param {function} handlePopoverOpen - Callback to open a popover with conductor info
+ * @param {Array} conductorData - Array of conductor data objects
+ * @param {Array} conductorProperties - Array of conductor material properties
+ * 
+ * @returns 
+ * JSX element representing the conductor row with selection controls and info popover.
+ */
+
 function ConductorRow({ 
   conductor, 
   rowName, 
   handleConductorChange, 
   handlePropertyChange,
+  handleCorePropertyChange,
   handlePopoverOpen,
   conductorData,
   conductorProperties
 }) {
- 
-
-  const currentConductorIndex = conductorData.findIndex(c => c.name === conductor.name);
-  const currentPropertyIndex = conductorProperties.findIndex(p => p.type === conductor.properties?.type);
-
-  const conductorSelectId = `conductor-select-${rowName}`;
-  const conductorLabelId = `conductor-label-${rowName}`;
-  const materialSelectId = `material-select-${rowName}`;
-  const materialLabelId = `material-label-${rowName}`;
-
-
   const handleDisplayStrands = (conductor) => {
     // Display the conductor strands in a popover or modal
 
@@ -61,12 +67,18 @@ function ConductorRow({
     return <ConductorStrandGraphic strands={theseStrands} />;
   }
 
+  // Get weighted properties array
+  const weightedProps = conductor.weightedProperties ? conductor.weightedProperties() : [];
+  const thisProperty = conductor.conductorProperties ? conductor.conductorProperties() : null;
+  const coreProperty = conductor.coreProperties ? conductor.coreProperties() : null;
 
-  const formatConductorInfo = (conductor, data, props) => {
-    if (!data && !props) return <Typography variant="body1">No data available</Typography>;
+  // TODO: Determine which property is core and which are others
+  // Example placeholder:
+  // const coreProperty = weightedProps.find(wp => /* your logic here */);
+  // const otherProperties = weightedProps.filter(wp => /* your logic here */);
 
-    // Get weighted properties array
-    const weightedProps = conductor.weightedProperties ? conductor.weightedProperties() : [];
+  const formatConductorInfo = (conductor, data) => {
+    if (!data && weightedProps.length === 0) return <Typography variant="body1">No data available</Typography>;
 
     return (
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -91,10 +103,11 @@ function ConductorRow({
         <Box>
           {weightedProps.length > 0 && weightedProps.map((wp, idx) => (
             <Box key={idx} sx={{ mb: 1, p: 1, border: '1px solid #eee', borderRadius: 1 }}>
+              {/* TODO: Indicate if this is core or other property */}
               <Typography variant="body2"><strong>Type:</strong> {wp.type}</Typography>
-              <Typography variant="body2"><strong>Weight %:</strong> {wp.weight_percent}%</Typography>
+              <Typography variant="body2"><strong>Weight %:</strong> {wp.weight_percent.toFixed(2)}%</Typography>
               {'surface_area' in wp && (
-                <Typography variant="body2"><strong>Surface Area:</strong> {wp.surface_area * 1000000} mm²</Typography>
+                <Typography variant="body2"><strong>Surface Area:</strong> {(wp.surface_area * 1000000).toFixed(2)} mm²</Typography>
               )}
               <Typography variant="body2"><strong>Ref Temp:</strong> {wp.temp_reference}°C</Typography>
               <Typography variant="body2"><strong>Resistivity:</strong> {wp.resistivity} Ω·m</Typography>
@@ -108,11 +121,22 @@ function ConductorRow({
     );
   };
 
+  const currentConductorIndex = conductorData.findIndex(c => c.name === conductor.name);
+  const currentPropertyIndex = thisProperty ? conductorProperties.findIndex(p => p.type === thisProperty?.type) : -1;
+  const currentCorePropertyIndex = coreProperty ? conductorProperties.findIndex(p => p.type === coreProperty?.type) : -1;
+
   const conductorInfo = formatConductorInfo(
     conductor,
-    conductorData[currentConductorIndex], 
-    conductorProperties[currentPropertyIndex]
+    conductorData[currentConductorIndex]
   );
+
+  const conductorSelectId = `conductor-select-${rowName}`;
+  const conductorLabelId = `conductor-label-${rowName}`;
+  const materialSelectId = `material-select-${rowName}`;
+  const materialLabelId = `material-label-${rowName}`;
+  const coreMaterialSelectId = `core-material-select-${rowName}`;
+  const coreMaterialLabelId = `core-material-label-${rowName}`;
+
 
   return (
     <>
@@ -145,6 +169,26 @@ function ConductorRow({
           ))}
         </Select>
       </FormControl>
+
+      {/* Conditional Core Material Select */}
+      {coreProperty ? (
+        <FormControl>
+          <InputLabel id={coreMaterialLabelId}>{`Core Material ${rowName}`}</InputLabel>
+          <Select
+            labelId={coreMaterialLabelId}
+            id={coreMaterialSelectId}
+            value={currentCorePropertyIndex >= 0 ? currentCorePropertyIndex : 0}
+            label={`Core Material ${rowName}`}
+            onChange={e => handleCorePropertyChange(e.target.value)}
+          >
+            <MenuItem value={""} disabled>none</MenuItem>
+            {conductorProperties.map((opt, i) => (
+              <MenuItem key={opt.type} value={i}>{opt.type}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>): null 
+      }
+
       {/* <FormControl sx={{ mr: 2, minWidth: 120 }}>
         <InputLabel id={insulatorLabelId}>{`Insulator ${rowName}`}</InputLabel>
         <Select

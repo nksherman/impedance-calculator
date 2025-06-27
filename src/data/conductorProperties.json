@@ -5,7 +5,7 @@
     "resistivity": 0.0000000168,
     "temp_coef_of_resistivity": 0.00393,
     "permeability_relative": 0.999994,
-    "conductivity": 58.0
+    "conductivity": 58.0 
   },
   {
     "type": "Aluminum",
@@ -14,5 +14,13 @@
     "temp_coef_of_resistivity": 0.0039,
     "permeability_relative": 1.000022,
     "conductivity": 35.0
+  },
+  {
+    "type": "Steel(1020)",
+    "temp_reference": 20,
+    "resistivity": 0.16,
+    "temp_coef_of_resistivity": 0.0006,
+    "permeability_relative": 1.00001,
+    "conductivity": 6.38
   }
 ]

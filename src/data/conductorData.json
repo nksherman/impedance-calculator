@@ -13,5 +13,18 @@
   { "name": "350-19 concentric", "strand_count": 19, "strand_dia": 3.4544, "outer_dia": 15.951 },
   { "name": "500-37 concentric", "strand_count": 37, "strand_dia": 2.946, "outer_dia": 20.650 },
   { "name": "750-61 concentric", "strand_count": 61, "strand_dia": 2.8194, "outer_dia": 25.3492 },
-  { "name": "1000-61 concentric", "strand_count": 61, "strand_dia": 3.2512, "outer_dia": 29.2608 }
+  { "name": "1000-61 concentric", "strand_count": 61, "strand_dia": 3.2512, "outer_dia": 29.2608 },
+  { "name": "4-7/1 concentric", "strand_count": 7, "strand_dia": 1.9609, "outer_dia": 6.5278, "core_strand_count": 1, "core_strand_dia": 2.6162 },
+  { "name": "300-26/7 concentric", "strand_count": 26, "strand_dia": 2.7280, "outer_dia": 17.272, "core_strand_count": 7, "core_strand_dia": 2.1209 },
+  { "name": "2-6/1 ACSR", "strand_count": 6, "strand_dia": 2.6721, "outer_dia": 8.0264, "core_strand_count": 1, "core_strand_dia": 2.6721 },
+  { "name": "2-7/1 ACSR", "strand_count": 6, "strand_dia": 2.4740, "outer_dia": 8.2550, "core_strand_count": 1, "core_strand_dia": 3.2969 },
+  { "name": "1/0-6/1 ACSR", "strand_count": 6, "strand_dia": 3.3706, "outer_dia": 10.1092, "core_strand_count": 1, "core_strand_dia": 3.3706 },
+  { "name": "2/0-6/1 ACSR", "strand_count": 6, "strand_dia": 3.7821, "outer_dia": 11.3538, "core_strand_count": 1, "core_strand_dia": 3.7821 },
+  { "name": "3/0-6/1 ACSR", "strand_count": 6, "strand_dia": 4.2469, "outer_dia": 12.7508, "core_strand_count": 1, "core_strand_dia": 4.2469 },
+  { "name": "4/0-6/1 ACSR", "strand_count": 6, "strand_dia": 4.7701, "outer_dia": 14.3002, "core_strand_count": 1, "core_strand_dia": 4.7701 },
+  { "name": "266.8-18/1 ACSR", "strand_count": 18, "strand_dia": 3.0912, "outer_dia": 15.4686, "core_strand_count": 1, "core_strand_dia": 3.0912 },
+  { "name": "266.8-26/7 ACSR", "strand_count": 26, "strand_dia": 2.5730, "outer_dia": 16.3068, "core_strand_count": 7, "core_strand_dia": 2.0015 },
+  { "name": "397.5-24/7 ACSR", "strand_count": 24, "strand_dia": 3.2690, "outer_dia": 19.6088, "core_strand_count": 7, "core_strand_dia": 2.1793 },
+  { "name": "397.5-26/7 ACSR", "strand_count": 26, "strand_dia": 3.1394, "outer_dia": 19.8882, "core_strand_count": 7, "core_strand_dia": 2.4435 },
+  { "name": "397.5-30/7 ACSR", "strand_count": 30, "strand_dia": 2.9235, "outer_dia": 20.4724, "core_strand_count": 7, "core_strand_dia": 2.9235 }
 ]

@@ -28,6 +28,11 @@ function ConductorInput({
   const [propertyIndices, setPropertyIndices] = useState(() => 
     conductorArrangements.map(() => 0)
   );
+
+  const [corePropertyIndices, setCorePropertyIndices] = useState(() =>
+    conductorArrangements.map(() => 0)
+  );
+
   // const [insulatorIndices, setInsulatorIndices] = useState(() => 
   //   conductorArrangements.map(() => 0)
   // );
@@ -47,6 +52,12 @@ function ConductorInput({
       while (newArr.length < newLength) newArr.push(0);
       return newArr.slice(0, newLength);
     });
+    setCorePropertyIndices(prev => {
+      const newArr = [...prev];
+      while (newArr.length < newLength) newArr.push(0);
+      return newArr.slice(0, newLength);
+    });
+    
     // setInsulatorIndices(prev => {
     //   const newArr = [...prev];
     //   while (newArr.length < newLength) newArr.push(0);
@@ -71,12 +82,14 @@ function ConductorInput({
   };
 
   const handleConductorChange = (idx, value) => {
-    const selectedConductorData = conductorData[value];
     const currentConductor = conductorArrangements[idx];
-    
-    // Create new conductor with same material properties but new conductor data
-    const currentProperties = currentConductor.properties || conductorProperties[propertyIndices[idx]];
-    const newConductor = createConductor(selectedConductorData, currentProperties);
+
+    const selectedConductorData = conductorData[value];
+    // current other settings
+    const currentProperties = conductorProperties[propertyIndices[idx]];
+    const coreProperties = conductorProperties[corePropertyIndices[idx]];
+
+    const newConductor = createConductor(selectedConductorData, currentProperties, coreProperties);
     
     const updatedArrangements = [...conductorArrangements];
     updatedArrangements[idx] = newConductor;
@@ -88,23 +101,44 @@ function ConductorInput({
   };
 
   const handlePropertyChange = (idx, value) => {
-    const selectedProperties = conductorProperties[value];
     const currentConductor = conductorArrangements[idx];
-    
-    // Find the conductor data that matches the current conductor name
-    const currentConductorData = conductorData.find(c => c.name === currentConductor.name);
+
+    const selectedProperties = conductorProperties[value];
+    // current other settings
+    const currentConductorData = conductorData[conductorIndices[idx]];
+    const coreProperties = conductorProperties[corePropertyIndices[idx]];
     
     if (currentConductorData) {
-      const newConductor = createConductor(currentConductorData, selectedProperties);
+      const newConductor = createConductor(currentConductorData, selectedProperties, coreProperties);
       
       const updatedArrangements = [...conductorArrangements];
       updatedArrangements[idx] = newConductor;
       setConductorArrangements(updatedArrangements);
-    }
     
-    const newProps = [...propertyIndices];
-    newProps[idx] = value;
-    setPropertyIndices(newProps);
+      const newProps = [...propertyIndices];
+      newProps[idx] = value;
+      setPropertyIndices(newProps);
+    };
+  } 
+
+  const handleCorePropertyChange = (idx, value) => {
+    const currentConductor = conductorArrangements[idx];
+
+    const selectedCoreProperties = conductorProperties[value];
+    // current other settings
+    const currentConductorData = conductorData[conductorIndices[idx]];
+    const currentProperties = conductorProperties[propertyIndices[idx]];
+
+    if (currentConductorData) {
+      const newConductor = createConductor(currentConductorData, currentProperties, selectedCoreProperties);
+      const updatedArrangements = [...conductorArrangements];
+      updatedArrangements[idx] = newConductor;
+      setConductorArrangements(updatedArrangements);
+    }
+
+    const newCoreProps = [...corePropertyIndices];
+    newCoreProps[idx] = value;
+    setCorePropertyIndices(newCoreProps);
   };
 
   // const handleInsulatorChange = (idx, value) => {
@@ -147,6 +181,7 @@ function ConductorInput({
               rowName={phaseLabel[idx]}
               handleConductorChange={(e_val) => handleConductorChange(idx, e_val)}
               handlePropertyChange={(e_val) => handlePropertyChange(idx, e_val)}
+              handleCorePropertyChange={(e_val) => handleCorePropertyChange(idx, e_val)}
               handlePopoverOpen={handlePopoverOpen}
               conductorData={conductorData}
               conductorProperties={conductorProperties}

@@ -4,7 +4,7 @@ export interface ConductorProperties {
   resistivity: number; // Resistivity in ohm-meters
   temp_coef_of_resistivity: number; // Temperature coefficient of resistivity in 1/Celsius
   permeability_relative: number; // Relative permeability
-  conductivity: number; // Conductivity in S/m
+  conductivity: number; // Conductivity in MS/m
 }
 
 export interface RadialCoordinate {

@@ -25,6 +25,10 @@ interface Conductor {
   conductiveSurfaceArea(): number; // Conductive surface area in m^2
 
   weightedProperties(): ConductorPropertyWeights[]; // Weighted properties of the conductor
+
+  conductorProperties(): ConductorProperties; // Properties of the conductor (e.g., "copper", "aluminum")
+  coreProperties(): ConductorProperties | null; // Properties of the core conductor, if applicable
+
   effectivePermeability(): number; // Effective permeability of the conductor
   resistanceFn(): (temperature: number) => number; // Function to calculate resistance/length(m) from temperature
   gmr(): number; // Geometric Mean Radius in meters
@@ -55,6 +59,15 @@ class SolidConductor implements Conductor {
 
   weightedProperties(): ConductorPropertyWeights[] {
     return [{ ...this.properties, weight_percent: 100, surface_area: this.surfaceArea() }]; // Solid conductor has 100% of its own properties
+  }
+
+  conductorProperties(): ConductorProperties {
+    return this.weightedProperties()[0]; // Solid conductor has its own properties
+  }
+
+  coreProperties(): null {
+    // Solid conductors do not have a core, so return the same properties
+    return null;
   }
 
   effectivePermeability(): number {
@@ -105,6 +118,15 @@ class ConductorStrandIndividual implements Conductor {
 
   weightedProperties(): ConductorPropertyWeights[] {
     return [{ ...this.properties, weight_percent: 100, surface_area: this.surfaceArea() }]; // Each strand has its own properties
+  }
+
+  conductorProperties(): ConductorProperties {
+    return this.weightedProperties()[0]; // Solid conductor has its own properties
+  }
+
+  coreProperties(): null {
+    // Solid conductors do not have a core, so return the same properties
+    return null;
   }
 
   effectivePermeability(): number {
@@ -200,14 +222,13 @@ class StrandedConductor implements Conductor {
     }
 
     const condWeights = Object.entries(propMap).map(([type, surfaceArea]) => {
-      const totalSurfaceArea = this.conductiveSurfaceArea();
+      // Find a strand with this type to get its properties
+      const strand = this.arrangement.find(c => c.properties.type === type);
+      if (!strand) throw new Error(`No strand found for type ${type}`);
+      const props = strand.properties;
+
       return  {
-        type,
-        temp_reference: this.arrangement[0].properties.temp_reference,
-        resistivity: this.arrangement[0].properties.resistivity,
-        temp_coef_of_resistivity: this.arrangement[0].properties.temp_coef_of_resistivity,
-        permeability_relative: this.arrangement[0].properties.permeability_relative,
-        conductivity: this.arrangement[0].properties.conductivity,
+        ...props,
         weight_percent: (surfaceArea / totalSurfaceArea) * 100,
         surface_area: surfaceArea
       };
@@ -215,6 +236,42 @@ class StrandedConductor implements Conductor {
 
     return condWeights;
   }
+
+  conductorProperties(): ConductorProperties {
+    // highest weighted property
+    const weightedProps = this.weightedProperties();
+    if (weightedProps.length === 0) {
+      throw new Error("No weighted properties available for conductor properties.");
+    } else if (weightedProps.length > 2) {
+      // If there are multiple properties, we can log them for debugging
+      console.warn("More than 2 weighted properties found, returning the highest weighted property.");
+    }
+    
+    // find the highest weighted  conductor property
+    return weightedProps.reduce((highest, current) => {
+      return (current.weight_percent > highest.weight_percent) ? current : highest;
+    }
+    , weightedProps[0]);
+  }
+
+  coreProperties(): ConductorProperties {
+    // Solid conductors do not have a core, so return the same properties
+    const weightedProps = this.weightedProperties();
+
+    if (weightedProps.length === 0) {
+      throw new Error("No weighted properties available for core properties.");
+    } else if (weightedProps.length > 2) {
+      // If there are multiple properties, we can log them for debugging
+      console.warn("More than 2 properties found, returning the lowest weighted property.");
+    }
+
+    // find the lowest weighted conductor property
+    return weightedProps.reduce((lowest, current) => {
+      return (current.weight_percent < lowest.weight_percent) ? current : lowest;
+    }
+    , weightedProps[0]);
+  }
+
 
   effectivePermeability(): number {
     // Calculate the effective permeability based on the arrangement
@@ -239,7 +296,9 @@ class StrandedConductor implements Conductor {
       throw new Error("No weighted properties available for resistance calculation.");
     }
 
-        return (temperature: number): number => {
+    const resList: number[] = []
+
+    return (temperature: number): number => {
       let totalResistancePerLength = 0;
 
       weightedProps.forEach(({ resistivity, temp_coef_of_resistivity, surface_area }) => {
@@ -248,9 +307,14 @@ class StrandedConductor implements Conductor {
 
         // Multiply adjusted resistivity by total surface area
         totalResistancePerLength += adjustedResistivity / surface_area; // Convert mm^2 to m^2 for consistency with resistivity in ohm-m^2/m
+        resList.push(adjustedResistivity / surface_area);
       });
 
-      return totalResistancePerLength;
+      // Return the total resistanceEq per length, note: Parallel
+      const invResEq = resList.reduce((total, res) => total + (1/res), 0);
+      const resEq = 1 / invResEq;
+
+      return resEq;
     };
   }
 
