@@ -64,12 +64,16 @@ function ConductorRow({
 
   const formatConductorInfo = (conductor, data, props) => {
     if (!data && !props) return <Typography variant="body1">No data available</Typography>;
+
+    // Get weighted properties array
+    const weightedProps = conductor.weightedProperties ? conductor.weightedProperties() : [];
+
     return (
-      <Box sx={{ p: 2, display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-        <Box sx={{ flex : 1, mr: 2 }}>
+      <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
           {handleDisplayStrands(conductor)}
           {data && (
-            <>
+            <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'left' }}>
               <Typography variant="body1"><strong>Name:</strong> {data.name}</Typography>
               <Typography variant="body1"><strong>Strands:</strong> {data.strand_count}</Typography>
               <Typography variant="body1"><strong>Strand dia:</strong> {data.strand_dia ?? data.strand_dia} mm</Typography>
@@ -81,20 +85,24 @@ function ConductorRow({
                 </>
               )}
               <Box sx={{ mb: 1 }} />
-            </>
+            </Box>
           )}
         </Box>
         <Box>
-          {props && (
-            <>
-              <Typography variant="body1"><strong>Type:</strong> {props.type}</Typography>
-              <Typography variant="body1"><strong>Ref Temp:</strong> {props.temp_reference ?? props.ref_temp}°C</Typography>
-              <Typography variant="body1"><strong>Resistivity:</strong> {props.resistivity} Ω·m</Typography>
-              <Typography variant="body1"><strong>Temp Coef of Res.:</strong> {props.temp_coef_of_resistivity} 1/°C</Typography>
-              <Typography variant="body1"><strong>Relative Permeability:</strong> {props.permeability_relative}</Typography>
-              <Typography variant="body1"><strong>Conductivity:</strong> {props.conductivity} S/m</Typography>
-            </>
-          )}
+          {weightedProps.length > 0 && weightedProps.map((wp, idx) => (
+            <Box key={idx} sx={{ mb: 1, p: 1, border: '1px solid #eee', borderRadius: 1 }}>
+              <Typography variant="body2"><strong>Type:</strong> {wp.type}</Typography>
+              <Typography variant="body2"><strong>Weight %:</strong> {wp.weight_percent}%</Typography>
+              {'surface_area' in wp && (
+                <Typography variant="body2"><strong>Surface Area:</strong> {wp.surface_area * 1000000} mm²</Typography>
+              )}
+              <Typography variant="body2"><strong>Ref Temp:</strong> {wp.temp_reference}°C</Typography>
+              <Typography variant="body2"><strong>Resistivity:</strong> {wp.resistivity} Ω·m</Typography>
+              <Typography variant="body2"><strong>Temp Coef of Res.:</strong> {wp.temp_coef_of_resistivity} 1/°C</Typography>
+              <Typography variant="body2"><strong>Relative Permeability:</strong> {wp.permeability_relative}</Typography>
+              <Typography variant="body2"><strong>Conductivity:</strong> {wp.conductivity} S/m</Typography>
+            </Box>
+          ))}
         </Box>
       </Box>
     );
