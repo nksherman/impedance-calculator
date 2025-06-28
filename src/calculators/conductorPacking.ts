@@ -127,7 +127,7 @@ function packStrandedConductorWithCore(
     const coreArrangement = closePackedCore(coreStrands, coreRadius, coreProperties);
     // apply properties to core strands
 
-    circumRadius = radius + coreRadius + Math.max(...coreArrangement.map(s => s.r + s.radius));
+    circumRadius = radius + Math.max(...coreArrangement.map(s => s.r + s.radius));
     arrangement.push(...coreArrangement);
   }
 
