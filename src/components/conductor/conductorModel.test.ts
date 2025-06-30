@@ -66,11 +66,15 @@ describe('StrandedConductor', () => {
 
     expect(stranded.circumscribedRadius()).toBeCloseTo(solid.circumscribedRadius(), 8);
     expect(stranded.surfaceArea()).toBeCloseTo(solid.surfaceArea(), 8);
-    expect(stranded.weightedProperties()).toEqual(solid.weightedProperties());
     expect(stranded.gmr()).toBeCloseTo(solid.gmr(), 8);
 
     const sFn = solid.resistanceFn();
     const stFn = stranded.resistanceFn();
+
+    const sProps = solid.weightedProperties();
+    const stProps = stranded.weightedProperties();
+    expect(sProps).toEqual(stProps);
+
     expect(stFn(20)).toBeCloseTo(sFn(20), 8);
     expect(stFn(50)).toBeCloseTo(sFn(50), 8);
   });
@@ -115,7 +119,7 @@ describe('StrandedConductor', () => {
   });
 
   it('should calculate resistanceFn for mixed materials', () => {
-    const sc = new StrandedConductor('resist-mix', 2, 0.002, copper, 2, 0.002, aluminum);
+    const sc = new StrandedConductor('resist-mix', 2, 0.001, copper, 2, 0.002, aluminum);
     const fn = sc.resistanceFn();
     const r20 = fn(20);
     const r40 = fn(40);

@@ -7,7 +7,6 @@ import Button from '@mui/material/Button';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
-
 import { createConductor } from './conductorHelpers';
 
 import ConductorRow from './conductorRow.jsx';

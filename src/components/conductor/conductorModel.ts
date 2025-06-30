@@ -296,18 +296,14 @@ class StrandedConductor implements Conductor {
       throw new Error("No weighted properties available for resistance calculation.");
     }
 
-    const resList: number[] = []
-
     return (temperature: number): number => {
-      let totalResistancePerLength = 0;
+      const resList: number[] = []
 
       weightedProps.forEach(({ resistivity, temp_coef_of_resistivity, surface_area }) => {
         // Adjust resistivity based on temperature
-        const adjustedResistivity = resistivity * (1 + (temp_coef_of_resistivity * (temperature - 20))); // Assuming 20°C reference
+        const adjustedResistivity = resistivity / surface_area * (1 + (temp_coef_of_resistivity * (temperature - 20))); // Assuming 20°C reference
 
-        // Multiply adjusted resistivity by total surface area
-        totalResistancePerLength += adjustedResistivity / surface_area; // Convert mm^2 to m^2 for consistency with resistivity in ohm-m^2/m
-        resList.push(adjustedResistivity / surface_area);
+        resList.push(adjustedResistivity);
       });
 
       // Return the total resistanceEq per length, note: Parallel
@@ -317,7 +313,6 @@ class StrandedConductor implements Conductor {
       return resEq;
     };
   }
-
 
   private calculateDistance(coord1: RadialCoordinate, coord2: RadialCoordinate): number {
     // Convert polar coordinates to Cartesian coordinates

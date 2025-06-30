@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ConductorInput from './conductorInput';
 
+jest.mock('./conductor/conductorStrandGraphic', () => () => <div data-testid="mock-strand-graphic" />);
 
 // Minimal createConductor mock to match usage in component
 jest.mock('./conductorHelpers', () => ({
