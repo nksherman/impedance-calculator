@@ -14,7 +14,11 @@ type ConductorPropertyWeights = ConductorProperties & {
  */
 interface Conductor {
   radius: number; // Radius in meters
-  // properties: ConductorProperties; // Properties of the conductor (e.g., "copper", "aluminum")
+  weightedProperties: ConductorPropertyWeights[];
+  conductorProperties: ConductorProperties;
+  coreProperties: ConductorProperties | null;
+  
+  // properties: computeConductorProperties; // Properties of the conductor (e.g., "copper", "aluminum")
 
   /* static properties */
 
@@ -24,10 +28,10 @@ interface Conductor {
   surfaceArea(): number; // Surface area in m^2,for considering insulation
   conductiveSurfaceArea(): number; // Conductive surface area in m^2
 
-  weightedProperties(): ConductorPropertyWeights[]; // Weighted properties of the conductor
+  computeWeightedProperties(): ConductorPropertyWeights[]; // Weighted properties of the conductor
 
-  conductorProperties(): ConductorProperties; // Properties of the conductor (e.g., "copper", "aluminum")
-  coreProperties(): ConductorProperties | null; // Properties of the core conductor, if applicable
+  computeConductorProperties(): ConductorProperties; // Properties of the conductor (e.g., "copper", "aluminum")
+  computeCoreProperties(): ConductorProperties | null; // Properties of the core conductor, if applicable
 
   effectivePermeability(): number; // Effective permeability of the conductor
   resistanceFn(): (temperature: number) => number; // Function to calculate resistance/length(m) from temperature
@@ -37,12 +41,20 @@ interface Conductor {
 class SolidConductor implements Conductor {
   name: string;
   radius: number; // Radius in meters
-  properties: ConductorProperties; 
+  properties: ConductorProperties;
+  
+  weightedProperties: ConductorPropertyWeights[];
+  conductorProperties: ConductorProperties;
+  coreProperties: null; // Solid conductors do not have a core, so this is
 
   constructor(name: string, radius: number, properties: ConductorProperties ) {
     this.name = name;
     this.radius = radius;
     this.properties = properties;
+
+    this.weightedProperties = this.computeWeightedProperties();
+    this.conductorProperties = this.computeConductorProperties();
+    this.coreProperties = this.computeCoreProperties();
   }
 
   circumscribedRadius(): number {
@@ -57,15 +69,15 @@ class SolidConductor implements Conductor {
     return  Math.PI * this.radius * this.radius; // Surface area of a cylinder (2 * π * r)
   }
 
-  weightedProperties(): ConductorPropertyWeights[] {
+  computeWeightedProperties(): ConductorPropertyWeights[] {
     return [{ ...this.properties, weight_percent: 100, surface_area: this.surfaceArea() }]; // Solid conductor has 100% of its own properties
   }
 
-  conductorProperties(): ConductorProperties {
-    return this.weightedProperties()[0]; // Solid conductor has its own properties
+  computeConductorProperties(): ConductorProperties {
+    return this.computeWeightedProperties()[0]; // Solid conductor has its own properties
   }
 
-  coreProperties(): null {
+  computeCoreProperties(): null {
     // Solid conductors do not have a core, so return the same properties
     return null;
   }
@@ -97,11 +109,20 @@ class ConductorStrandIndividual implements Conductor {
   radius: number; // radius of the strand, mm
   properties: ConductorProperties; // Properties of the conductor strand
 
+  weightedProperties: ConductorPropertyWeights[];
+  conductorProperties: ConductorProperties;
+  coreProperties: null; // Solid conductors do not have a core, so this is
+  
+
   constructor(r: number, theta: number, radius: number, properties: ConductorProperties) {
     this.r = r;
     this.theta = theta;
     this.radius = radius;
     this.properties = properties;
+
+    this.weightedProperties = this.computeWeightedProperties();
+    this.conductorProperties = this.computeConductorProperties();
+    this.coreProperties = this.computeCoreProperties();
   }
   
   circumscribedRadius(): number {
@@ -116,15 +137,15 @@ class ConductorStrandIndividual implements Conductor {
     return Math.PI * this.radius * this.radius; // Surface area of the strand
   }
 
-  weightedProperties(): ConductorPropertyWeights[] {
+  computeWeightedProperties(): ConductorPropertyWeights[] {
     return [{ ...this.properties, weight_percent: 100, surface_area: this.surfaceArea() }]; // Each strand has its own properties
   }
 
-  conductorProperties(): ConductorProperties {
-    return this.weightedProperties()[0]; // Solid conductor has its own properties
+  computeConductorProperties(): ConductorProperties {
+    return this.computeWeightedProperties()[0]; // Solid conductor has its own properties
   }
 
-  coreProperties(): null {
+  computeCoreProperties(): null {
     // Solid conductors do not have a core, so return the same properties
     return null;
   }
@@ -160,15 +181,18 @@ class StrandedConductor implements Conductor {
   arrangement: ConductorStrandIndividual[];
   radius: number;
 
+  weightedProperties: ConductorPropertyWeights[];
+  conductorProperties: ConductorProperties;
+  coreProperties: ConductorProperties | null;
   
   constructor(name: string, strands: number, strandRadius: number, strandProperties: ConductorProperties, 
-    coreStrands?: number, coreRadius?: number, coreProperties?: ConductorProperties,
+    coreStrands?: number, coreRadius?: number, computeCoreProperties?: ConductorProperties,
     outerRadius?: number
   ) {
       this.name = name;
 
-      if (coreStrands && coreRadius && coreProperties) {
-        const theseStrands: RadialConductor[] = packStrandedConductorWithCore(strands, strandRadius, coreStrands, coreRadius, strandProperties, coreProperties);
+      if (coreStrands && coreRadius && computeCoreProperties) {
+        const theseStrands: RadialConductor[] = packStrandedConductorWithCore(strands, strandRadius, coreStrands, coreRadius, strandProperties, computeCoreProperties);
         this.arrangement = theseStrands.map(s => new ConductorStrandIndividual(s.r, s.theta, s.radius, s.properties));
       } else {
         const theseStrands: RadialConductor[] = packStrandedConductor(strands, strandRadius, strandProperties);
@@ -176,6 +200,10 @@ class StrandedConductor implements Conductor {
       }
 
       this.radius = outerRadius || Math.max(...this.arrangement.map(c => c.r + c.radius));
+
+      this.weightedProperties = this.computeWeightedProperties();
+      this.conductorProperties = this.computeConductorProperties();
+      this.coreProperties = this.computeCoreProperties();
   }
 
   circumscribedRadius(): number {
@@ -200,7 +228,7 @@ class StrandedConductor implements Conductor {
     }, 0)
   }
 
-  weightedProperties(): ConductorPropertyWeights[] {
+  computeWeightedProperties(): ConductorPropertyWeights[] {
     // for each this.arrangement, get the properties and the surface area
     // I should sum the total surface area of all conductors
     // then calculate the weighted percentage of each conductor's surface area
@@ -237,9 +265,9 @@ class StrandedConductor implements Conductor {
     return condWeights;
   }
 
-  conductorProperties(): ConductorProperties {
+  computeConductorProperties(): ConductorProperties {
     // highest weighted property
-    const weightedProps = this.weightedProperties();
+    const weightedProps = this.computeWeightedProperties();
     if (weightedProps.length === 0) {
       throw new Error("No weighted properties available for conductor properties.");
     } else if (weightedProps.length > 2) {
@@ -254,9 +282,9 @@ class StrandedConductor implements Conductor {
     , weightedProps[0]);
   }
 
-  coreProperties(): ConductorProperties {
+  computeCoreProperties(): ConductorProperties {
     // Solid conductors do not have a core, so return the same properties
-    const weightedProps = this.weightedProperties();
+    const weightedProps = this.computeWeightedProperties();
 
     if (weightedProps.length === 0) {
       throw new Error("No weighted properties available for core properties.");
@@ -275,7 +303,7 @@ class StrandedConductor implements Conductor {
 
   effectivePermeability(): number {
     // Calculate the effective permeability based on the arrangement
-    const weightedProps = this.weightedProperties();
+    const weightedProps = this.computeWeightedProperties();
     if (weightedProps.length === 0) {
       throw new Error("No weighted properties available for effective permeability calculation.");
     }
@@ -290,8 +318,8 @@ class StrandedConductor implements Conductor {
   resistanceFn(): (temperature: number) => number {
     // returns a function that calculates resistance/length based on temperature
 
-    // get weightedProperties
-    const weightedProps = this.weightedProperties();
+    // get computeWeightedProperties
+    const weightedProps = this.computeWeightedProperties();
     if (weightedProps.length === 0) {
       throw new Error("No weighted properties available for resistance calculation.");
     }

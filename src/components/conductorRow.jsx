@@ -13,10 +13,11 @@ import QuestionMarkIcon from '@mui/icons-material/HelpOutline';
 import GrainIcon from '@mui/icons-material/Grain';
 
 import GMR from '../math/gmr.jsx';
+import { createConductor, getConductorDataByName, getPropertiesByType } from './conductorHelpers';
 import ConductorStrandGraphic from './conductor/conductorStrandGraphic';
 
 import { SolidConductor, StrandedConductor } from './conductor/conductorModel.ts';
-
+ 
 /**
  * ConductorRow component displays information about a single conductor.
  * 
@@ -26,8 +27,8 @@ import { SolidConductor, StrandedConductor } from './conductor/conductorModel.ts
  * @param {function} handlePropertyChange - Callback to handle material property selection change
  * @param {function} handleCorePropertyChange - Callback to handle core material property selection change
  * @param {function} handlePopoverOpen - Callback to open a popover with conductor info
- * @param {Array} conductorData - Array of conductor data objects
- * @param {Array} conductorProperties - Array of conductor material properties
+ * @param {Array} conductorDataArray - Array of conductor data objects
+ * @param {Array} conductorPropertiesArray - Array of conductor material properties
  * 
  * @returns 
  * JSX element representing the conductor row with selection controls and info popover.
@@ -40,42 +41,34 @@ function ConductorRow({
   handlePropertyChange,
   handleCorePropertyChange,
   handlePopoverOpen,
-  conductorData,
-  conductorProperties
+  conductorDataArray,
+  conductorPropertiesArray
 }) {
   const handleDisplayStrands = (conductor) => {
     // Display the conductor strands in a popover or modal
-
     let theseStrands = null;
-
-    if (conductor instanceof StrandedConductor) {
-        // stranded, display the strands
-        theseStrands = conductor.arrangement
-    } else if (conductor instanceof SolidConductor) {
+    // Use property-based type checks for testability
+    if (conductor && conductor.arrangement) {
+      // stranded, display the strands
+      theseStrands = conductor.arrangement;
+    } else if (conductor && !conductor.arrangement && 'radius' in conductor) {
       theseStrands = [{
         r: 0,
         theta: 0,
         radius: conductor.radius
       }];
-
     } else {
       // Not a valid conductor type, return null or handle error
-      console.error("Invalid conductor type for strand display");
-      return;
+      return null;
     }
 
     return <ConductorStrandGraphic strands={theseStrands} />;
-  }
+  } 
 
   // Get weighted properties array
-  const weightedProps = conductor.weightedProperties ? conductor.weightedProperties() : [];
-  const thisProperty = conductor.conductorProperties ? conductor.conductorProperties() : null;
-  const coreProperty = conductor.coreProperties ? conductor.coreProperties() : null;
-
-  // TODO: Determine which property is core and which are others
-  // Example placeholder:
-  // const coreProperty = weightedProps.find(wp => /* your logic here */);
-  // const otherProperties = weightedProps.filter(wp => /* your logic here */);
+  const weightedProps = conductor.weightedProperties || [];
+  const thisProperty = conductor.conductorProperties || null;
+  const coreProperty = conductor.coreProperties || null;
 
   const formatConductorInfo = (conductor, data) => {
     if (!data && weightedProps.length === 0) return <Typography variant="body1">No data available</Typography>;
@@ -121,13 +114,13 @@ function ConductorRow({
     );
   };
 
-  const currentConductorIndex = conductorData.findIndex(c => c.name === conductor.name);
-  const currentPropertyIndex = thisProperty ? conductorProperties.findIndex(p => p.type === thisProperty?.type) : -1;
-  const currentCorePropertyIndex = coreProperty ? conductorProperties.findIndex(p => p.type === coreProperty?.type) : -1;
+  const currentConductorIndex = conductorDataArray.findIndex(c => c.name === conductor.name);
+  const currentPropertyIndex = thisProperty ? conductorPropertiesArray.findIndex(p => p.type === thisProperty?.type) : -1;
+  const currentCorePropertyIndex = coreProperty ? conductorPropertiesArray.findIndex(p => p.type === coreProperty?.type) : -1;
 
   const conductorInfo = formatConductorInfo(
     conductor,
-    conductorData[currentConductorIndex]
+    conductorDataArray[currentConductorIndex]
   );
 
   const conductorSelectId = `conductor-select-${rowName}`;
@@ -149,7 +142,7 @@ function ConductorRow({
           label={`Conductor ${rowName}`}
           onChange={e => handleConductorChange(e.target.value)}
         >
-          {conductorData.map((opt, i) => (
+          {conductorDataArray.map((opt, i) => (
             <MenuItem key={opt.name} value={i}>{opt.name}</MenuItem>
           ))}
         </Select>
@@ -164,7 +157,7 @@ function ConductorRow({
           onChange={e => handlePropertyChange(e.target.value)}
         >
           <MenuItem value={""} disabled>none</MenuItem>
-          {conductorProperties.map((opt, i) => (
+          {conductorPropertiesArray.map((opt, i) => (
             <MenuItem key={opt.type} value={i}>{opt.type}</MenuItem>
           ))}
         </Select>
@@ -182,7 +175,7 @@ function ConductorRow({
             onChange={e => handleCorePropertyChange(e.target.value)}
           >
             <MenuItem value={""} disabled>none</MenuItem>
-            {conductorProperties.map((opt, i) => (
+            {conductorPropertiesArray.map((opt, i) => (
               <MenuItem key={opt.type} value={i}>{opt.type}</MenuItem>
             ))}
           </Select>
