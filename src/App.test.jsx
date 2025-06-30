@@ -42,7 +42,7 @@ jest.mock('./components/neutralInput', () => (props) => {
       effectivePermeability: jest.fn(() => 1),
       resistanceFn: jest.fn(() => () => 0.1),
       gmr: jest.fn(() => 0.008),
-      weightedProperties: jest.fn(() => [{ weight_percent: 100, type: 'Aluminum' }]),
+      weightedProperties: [{ weight_percent: 100, type: 'Aluminum' }],
     };
   }
   return (
@@ -62,7 +62,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /Calculate RLC/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/frequency/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/temperature/i)).toBeInTheDocument();
-  });
+  }); 
 
   it('frequency input accepts valid numbers and rejects invalid', () => {
     render(<App />);

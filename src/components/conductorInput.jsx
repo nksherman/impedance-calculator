@@ -182,8 +182,8 @@ function ConductorInput({
               handlePropertyChange={(e_val) => handlePropertyChange(idx, e_val)}
               handleCorePropertyChange={(e_val) => handleCorePropertyChange(idx, e_val)}
               handlePopoverOpen={handlePopoverOpen}
-              conductorData={conductorData}
-              conductorProperties={conductorProperties}
+              conductorDataArray={conductorData}
+              conductorPropertiesArray={conductorProperties}
             />
           </Box>
         );

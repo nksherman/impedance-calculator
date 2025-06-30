@@ -26,7 +26,7 @@ describe('SolidConductor', () => {
     const sc = new SolidConductor("test1", 0.01, copper);
     expect(sc.circumscribedRadius()).toBeCloseTo(0.01, 6);
     expect(sc.surfaceArea()).toBeCloseTo(Math.PI * 0.01 * 0.01, 6);
-    expect(sc.weightedProperties()).toEqual([
+    expect(sc.weightedProperties).toEqual([
       expect.objectContaining({ type: 'Copper', weight_percent: 100 })
     ]);
   });
@@ -53,7 +53,7 @@ describe('StrandedConductor', () => {
     expect(sc['arrangement'].length).toBe(1);
     expect(sc.circumscribedRadius()).toBeCloseTo(0.01, 6);
     expect(sc.surfaceArea()).toBeCloseTo(Math.PI * 0.01 * 0.01, 6);
-    expect(sc.weightedProperties()).toEqual([
+    expect(sc.weightedProperties).toEqual([
       expect.objectContaining({ type: 'Copper', weight_percent: 100 })
     ]);
   });
@@ -71,8 +71,8 @@ describe('StrandedConductor', () => {
     const sFn = solid.resistanceFn();
     const stFn = stranded.resistanceFn();
 
-    const sProps = solid.weightedProperties();
-    const stProps = stranded.weightedProperties();
+    const sProps = solid.weightedProperties;
+    const stProps = stranded.weightedProperties;
     expect(sProps).toEqual(stProps);
 
     expect(stFn(20)).toBeCloseTo(sFn(20), 8);
@@ -84,7 +84,7 @@ describe('StrandedConductor', () => {
     expect(sc['arrangement'].length).toBe(7);
     expect(sc.circumscribedRadius()).toBeGreaterThan(0.005);
     expect(sc.surfaceArea()).toBeCloseTo(7 * Math.PI * 0.005 * 0.005, 6);
-    expect(sc.weightedProperties()).toEqual([
+    expect(sc.weightedProperties).toEqual([
       expect.objectContaining({ type: 'Copper', weight_percent: 100 })
     ]);
   });
@@ -95,7 +95,7 @@ describe('StrandedConductor', () => {
     const types = sc['arrangement'].map(s => s.properties.type);
     expect(types.filter(t => t === 'Copper').length).toBe(6);
     expect(types.filter(t => t === 'Aluminum').length).toBe(1);
-    const weights = sc.weightedProperties();
+    const weights = sc.weightedProperties;
     expect(weights.length).toBe(2);
     expect(weights.map(w => w.type)).toContain('Copper');
     expect(weights.map(w => w.type)).toContain('Aluminum');
@@ -105,8 +105,8 @@ describe('StrandedConductor', () => {
   it('should handle only outer strands', () => {
     const sc = new StrandedConductor('outerOnly', 5, 0.002, copper, 0, 0.003, aluminum);
     expect(sc['arrangement'].length).toBe(5);
-    expect(sc.weightedProperties().length).toBe(1);
-    expect(sc.weightedProperties()[0].type).toBe('Copper');
+    expect(sc.weightedProperties.length).toBe(1);
+    expect(sc.weightedProperties[0].type).toBe('Copper');
   });
 
   it('should calculate resistanceFn for single material', () => {
@@ -135,7 +135,9 @@ describe('StrandedConductor', () => {
   });
 
   it('should throw or handle invalid input gracefully', () => {
-    expect(() => new StrandedConductor('bad', -1, 0.01, copper)).not.toThrow();
-    expect(() => new StrandedConductor('bad2', 2, -0.01, copper)).not.toThrow();
-  });
+    expect(() => new StrandedConductor('bad', -1, 0.01, copper)).toThrow(
+      "No valid strands provided for a stranded conductor.");
+    expect(() => new StrandedConductor('bad2', 2, -0.01, copper)).toThrow(
+      "Strand radius must be greater than 0.");
+  });  
 });

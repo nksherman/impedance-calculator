@@ -168,7 +168,7 @@ function App() {
     // get the weighted properties, and return a label for it
     if (!conductor) return conductor.name || "No Name";
 
-    const properties = conductor.weightedProperties();
+    const properties = conductor.weightedProperties;
     let propLabel = properties.map(p => `${p.weight_percent}% ${p.type}`).join(', ');
 
     if (propLabel.startsWith('100% ')) {

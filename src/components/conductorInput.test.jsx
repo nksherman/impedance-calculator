@@ -3,15 +3,32 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import ConductorInput from './conductorInput';
 
 jest.mock('./conductor/conductorStrandGraphic', () => () => <div data-testid="mock-strand-graphic" />);
+jest.mock('./conductor/conductorModel.ts', () => {
+  class SolidConductor {}
+  class StrandedConductor {
+    // CoreProperties Mocked to render correctly
+    // may have side effects
+    constructor(props) {
+      Object.assign(this, props);
+    }
+    coreProperties() {
+      return {
+        type: "Copper",
+      };
+    }
+  }
+  return { SolidConductor, StrandedConductor };
+});
 
 // Minimal createConductor mock to match usage in component
 jest.mock('./conductorHelpers', () => ({
-  createConductor: (data, props) => ({ ...data, properties: props }),
+  createConductor: (data, props, coreProps) => ({ ...data, properties: props, coreProperties: coreProps }),
 }));
 
 const mockConductorData = [
   { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_dia: 3.3 },
   { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_dia: 4.5 },
+  { name: 'CondCored', strand_count: 37, strand_dia: 0.5, outer_dia: 6.0, core_strand_count: 2, core_strand_dia: 2.9235, core_material: "Copper" },
 ];
 
 const mockConductorProperties = [
@@ -99,6 +116,19 @@ describe('ConductorInput', () => {
     ]);
   });
 
+  it('changing material select shows all materials', () => {
+    setup();
+    const select = screen.getByRole('combobox', { name: 'Material A'
+    });
+    fireEvent.mouseDown(select);
+    const options = screen.getAllByRole('option');
+    expect(options).toHaveLength(3);
+    expect(options[0]).toHaveTextContent('none');
+    expect(options[1]).toHaveTextContent('Copper');
+    expect(options[2]).toHaveTextContent('Aluminum');
+  });
+
+
   it('changing material select updates arrangement', () => {
     setup();
     const select = screen.getByRole('combobox', { name: 'Material A' });
@@ -109,4 +139,6 @@ describe('ConductorInput', () => {
       expect.objectContaining({ properties: expect.objectContaining({ type: 'Aluminum' }) })
     ]);
   });
+
+  // core handled in row test
 });
