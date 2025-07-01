@@ -149,6 +149,6 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
     
     const neutralBox = screen.getByTestId('neutral-res');
-    expect(neutralBox).toHaveTextContent(/Neutral \(Aluminum\)/i);
+    expect(neutralBox).toHaveTextContent(/NeutralAluminum/i);
   });
 });

@@ -28,6 +28,7 @@ import DistanceMatrix from './components/distanceMatrix.jsx';
 import DataSetter from './components/dataSetter.jsx';
 
 import { createDefaultConductors } from './components/conductorHelpers.js';
+import { calculateRLC as calculateRLCExternal } from './calculators/rlcCalculator.js';
 
 import defaultConductorData from './data/conductorData.json';
 import defaultConductorProperties from './data/conductorProperties.json';
@@ -73,95 +74,20 @@ function App() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [popoverContent, setPopoverContent] = useState(null);
 
+  // Remove the old calculateRLC and replace with a wrapper that uses the external calculator
   const calculateRLC = (gmd_mm, frequency) => {
-    // early handle frequency = 0 (DC circuit)
-    if (frequency === 0) {
-      setRlcResults(conductorArrangements.map(conductor => ({
-        R: conductor.resistanceFn()(temperature) * 1000, // ohms per  km
 
-        L: 0, // H/m
-        C: 0, // F/m
-
-      })));
-      setTotalXlpk(0);
-      setTotalXcpk(0);
-      setNeutralResistance(neutralArrangement ? neutralArrangement.resistanceFn()(temperature) * 1000 : 0);
-      return;
-    }
-
-    // early handle gmd = 0 (degenerate case)
-    if (
-      gmd_mm === 0 &&
-      conductorArrangements.length === 1 &&
-      !neutralArrangement
-    ) {
-      const conductor = conductorArrangements[0];
-      const GMR = conductor.gmr();
-      const r_m = conductor.circumscribedRadius();
-      const resFn = conductor.resistanceFn();
-      const R = resFn(temperature);
-
-      // Use GMR for both GMD and GMR in this degenerate case
-      const L = 0
-      const C = (2 * Math.PI * permissivity_free_space) / Math.log(GMR / r_m);
-
-      const xcpk = frequency? 1 / (2 * Math.PI * frequency * C) : 0; // ohms per km
-
-      setRlcResults([{
-        R: R,
-        L: L,
-        C: C,
-      }]);
-      setTotalXlpk(0);
-      setTotalXcpk(xcpk);
-      setNeutralResistance(0);
-      return;
-    }
-
-    const gmd_m = gmd_mm / 1000; // Convert mm to m
-
-    const results = conductorArrangements.map((conductor, idx) => {
-      const r_m = conductor.circumscribedRadius()
-
-      const permeabilityRelative = conductor.effectivePermeability()
-      const resFn = conductor.resistanceFn();
-      const GMR = conductor.gmr()
-
-      // Temperature correction for resistivity
-      const R = resFn(temperature);
-      const L = permeabilityRelative * permeability_of_free_space / (2*Math.PI) * Math.log(gmd_m / GMR); // H/m
-      const C = (2 * Math.PI * permissivity_free_space) / Math.log(gmd_m / r_m); // F/m
-
-      return {
-        R: R, // all per/m
-        L: L,
-        C: C,
-      };
-    });
-
-    setRlcResults(results);
-
-    // L/C is the maximum of the individual values
-    const L_max = Math.max(...results.map(res => res.L));
-    const C_max = Math.max(...results.map(res => res.C));
-
-    const omega = 2 * Math.PI * frequency; // Angular frequency
-
-    const xl_tot = omega * L_max;
-    const cl_tot = 1/(omega * C_max);
-
-    setTotalXlpk(xl_tot * 1000); // Convert to ohms per 1000 m
-    setTotalXcpk(cl_tot * 1000);
-
-    // If neutral is selected, calculate its resistance
-    if (neutralArrangement !== "" ) {
-      const resFn = neutralArrangement.resistanceFn();
-
-      const R = resFn(temperature);
-      setNeutralResistance(R * 1000); // Convert to ohms per km
-    } else {
-      setNeutralResistance(0);
-    }
+    const { rlcResults, totalXlpk, totalXcpk, neutralResistance } = calculateRLCExternal(
+      frequency,
+      temperature,
+      gmd_mm,
+      conductorArrangements,
+      neutralArrangement,
+    );
+    setRlcResults(rlcResults);
+    setTotalXlpk(totalXlpk);
+    setTotalXcpk(totalXcpk);
+    setNeutralResistance(neutralResistance);
   };
 
   const conductorPropertyLabel = (conductor) => {
@@ -169,13 +95,22 @@ function App() {
     if (!conductor) return conductor.name || "No Name";
 
     const properties = conductor.weightedProperties;
-    let propLabel = properties.map(p => `${p.weight_percent}% ${p.type}`).join(', ');
+    if (!properties || properties.length === 0) return conductor.name;
 
-    if (propLabel.startsWith('100% ')) {
-      propLabel =   propLabel.slice(5); // remove '100% ' prefix
-    }
-
-    return propLabel ? `${conductor.name} (${propLabel})` : conductor.name;
+    return (
+      <Box sx={{mr: 2}}>
+        <Typography>{conductor.name}</Typography>
+        {properties.length > 1 ? properties.map((p, idx) => (
+          <Typography variant="caption" key={idx} display="block">
+            {p.weight_percent.toFixed(2)}% {p.type}
+          </Typography>
+        )) : (
+          <Typography variant="caption" display="block">
+            {properties[0].type}
+          </Typography>
+        )}
+      </Box>
+    );
   }
 
 
