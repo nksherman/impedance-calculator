@@ -12,7 +12,7 @@ const ReactanceCapacitance = () => (
     <BlockMath math={
       String.raw`\begin{matrix}
         X_c/length = 1 / ( 2\pi{f}* (C/length) ) \\
-        C/length = 2\pi ε_0 / {\text{Ln}(\frac{GMD}{r_o})} \\
+        C/length = 2\pi ε_r ε_0 / {\text{Ln}(\frac{GMD}{r_o})} \\
         \end{matrix}`
     } />
     <Typography>where</Typography>
@@ -21,13 +21,14 @@ const ReactanceCapacitance = () => (
         X_c = \text{Capacitive Reactance} \\
         f = \text{Frequency} \\
         C/length = \text{Capacitance per unit length} \\
+        ε_r = \text{Relative permittivity} \\
         ε_0 = \text{Vacuum permittivity} \\
         \text{GMD} = \text{Geometric Mean Distance} \\
         r_o = \text{Circumscribing Radius}
       \end{matrix}`
     } />
-    <Typography>*Capacitance Reactance is typically dropped</Typography>
-    <Typography>*Assume the circuit is sufficiently 'Charged'</Typography>
+    <Typography>*ideal conductors have infinite permittivity and zero Capacitance</Typography>
+    <Typography>*This calculation assume relative permittivity is 1</Typography>
   </Box>
 );
 

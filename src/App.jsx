@@ -127,7 +127,15 @@ function App() {
       <Typography variant="h4" gutterBottom>
         Geometric Mean Distance Calculator
       </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 4 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column-reverse', md: 'row' },
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          gap: 4,
+        }}
+      >
         {/* Left: DistanceMatrix */}
         <Box sx={{ flex: '0 0 40%', minWidth: 320 }}>
           <DistanceMatrix
@@ -140,10 +148,11 @@ function App() {
           />
         </Box>
         {/* Right: Inputs */}
-        <Box sx={{ flex: '0 0 40%', minWidth: 320, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ flex: '0 0 40%', minWidth: 340, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <NeutralInput
             neutralArrangement={neutralArrangement}
             setNeutralArrangement={setNeutralArrangement}
+            handlePopoverOpen={handlePopoverOpen}
             conductorData={conductorData}
             conductorProperties={conductorProperties}
           />
@@ -249,9 +258,13 @@ function App() {
           <Button variant="contained" sx={{ mt: 2, width: 220 }} onClick={() => calculateRLC(gmd, frequency)}>Calculate RLC</Button>
         </Box>
       </Box>
-
       {/*  Results */}
-      <Box sx={{ mt: 3, display: 'flex', flexDirection: 'row', gap: 4 }}>
+      <Box sx={{ 
+        mt: 3, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 4
+      }}>
         {/* Left: Summary values */}
         <Box sx={{ flex: 1, minWidth: 250 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Summary</Typography>

@@ -132,7 +132,7 @@ function ConductorRow({
 
 
   return (
-    <>
+    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, minWidth: coreProperty ? 350 : 250 }}>
       <FormControl sx={{ mr: 2, minWidth: 120 }}>
         <InputLabel id={conductorLabelId}>{`Conductor ${rowName}`}</InputLabel>
         <Select 
@@ -261,7 +261,7 @@ function ConductorRow({
           <InfoOutlinedIcon />
         </IconButton>
       </Tooltip>
-    </>
+    </Box>
   )
 }
 

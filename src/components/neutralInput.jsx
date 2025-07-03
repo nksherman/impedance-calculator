@@ -8,22 +8,16 @@ import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 
 import { createConductor } from './conductorHelpers';
+import ConductorRow from './conductorRow.jsx';
 
 function NeutralInput({ 
   neutralArrangement, 
   setNeutralArrangement,
+  handlePopoverOpen,
   conductorData,
-  conductorProperties
+  conductorProperties,
 }) {
   const [neutralType, setNeutralType] = useState('MGN'); // or MGN
-
-  // Determine current indices for selects
-  const currentConductorIndex = neutralArrangement && neutralArrangement.name
-    ? conductorData.findIndex(c => c.name === neutralArrangement.name)
-    : 0;
-  const currentPropertyIndex = neutralArrangement && neutralArrangement.properties?.type
-    ? conductorProperties.findIndex(p => p.type === neutralArrangement.properties.type)
-    : 0;
 
   useEffect(() => {
     if (neutralType === 'MGN') {
@@ -35,31 +29,48 @@ function NeutralInput({
     }
   }, [neutralType, setNeutralArrangement, neutralArrangement, conductorData, conductorProperties]);
 
-  const handleConductorChange = (idx) => {
-    const selectedConductorData = conductorData[idx];
-    const currentProperties = neutralArrangement && neutralArrangement.properties
-      ? neutralArrangement.properties
+  // These handlers match the signature expected by ConductorRow
+  const handleConductorChange = (value) => {
+    const selectedConductorData = conductorData[value];
+    const currentProperties = neutralArrangement && neutralArrangement.conductorProperties
+      ? neutralArrangement.conductorProperties
       : conductorProperties[0];
-    setNeutralArrangement(createConductor(selectedConductorData, currentProperties));
+    const coreProperties = neutralArrangement && neutralArrangement.coreProperties
+      ? neutralArrangement.coreProperties
+      : undefined;
+    setNeutralArrangement(createConductor(selectedConductorData, currentProperties, coreProperties));
   };
 
-  const handlePropertyChange = (idx) => {
-    const selectedProperties = conductorProperties[idx];
+  const handlePropertyChange = (value) => {
+    const selectedProperties = conductorProperties[value];
     const currentConductorData = neutralArrangement && neutralArrangement.name
       ? conductorData.find(c => c.name === neutralArrangement.name)
       : conductorData[0];
-    setNeutralArrangement(createConductor(currentConductorData, selectedProperties));
+    const coreProperties = neutralArrangement && neutralArrangement.coreProperties
+      ? neutralArrangement.coreProperties
+      : undefined;
+    setNeutralArrangement(createConductor(currentConductorData, selectedProperties, coreProperties));
+  };
+
+  const handleCorePropertyChange = (value) => {
+    const selectedCoreProperties = conductorProperties[value];
+    const currentConductorData = neutralArrangement && neutralArrangement.name
+      ? conductorData.find(c => c.name === neutralArrangement.name)
+      : conductorData[0];
+    const currentProperties = neutralArrangement && neutralArrangement.conductorProperties
+      ? neutralArrangement.conductorProperties
+      : conductorProperties[0];
+    setNeutralArrangement(createConductor(currentConductorData, currentProperties, selectedCoreProperties));
   };
 
   return (
-    <Box sx={{ p: 2, border: 1, borderRadius: 2, mb: 2 }}>
-      {/* Row 1: Neutral Type */}
+    <Box sx={{ p: 1, mb: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Box sx={{display: "flex", flexDirection: "row",justifyContent:"center"}} >
-        <Typography variant="h6" gutterBottom>
-          Neutral
-        </Typography>
-          <FormControl sx={{ minWidth: 180 }}>
+        <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "center" }} >
+          <Typography variant="h6" gutterBottom>
+            Neutral
+          </Typography>
+          <FormControl sx={{ minWidth: 120 }}>
             <InputLabel id="neutral-type-label">Neutral Type</InputLabel>
             <Select
               labelId="neutral-type-label"
@@ -74,44 +85,19 @@ function NeutralInput({
           </FormControl>
         </Box>
       </Box>
-      {/* Row 2: Conductor and Material (only if Span) */}
+      {/* Row 2: ConductorRow (only if Span) */}
       {neutralType === "Span" && neutralArrangement && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FormControl sx={{ minWidth: 180 }}>
-            <InputLabel shrink id="neutral-conductor-label">Neutral Conductor</InputLabel>
-            <Select
-              labelId="neutral-conductor-label"
-              id="neutral-conductor-select"
-              value={currentConductorIndex}
-              onChange={e => handleConductorChange(e.target.value)}
-              label="Neutral Conductor"
-              disabled={neutralType !== "Span"}
-            >
-              <MenuItem value={""} disabled>none</MenuItem>
-              {conductorData.map((cond, idx) => (
-                <MenuItem key={idx} value={idx}>
-                  {cond.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: 180 }}>
-            <InputLabel id="neutral-material-label">Neutral Material</InputLabel>
-            <Select
-              labelId="neutral-material-label"
-              id="neutral-material-select"
-              value={currentPropertyIndex}
-              onChange={e => handlePropertyChange(e.target.value)}
-              label="Neutral Material"
-              disabled={neutralType !== "Span"}
-            >
-              {conductorProperties.map((prop, idx) => (
-                <MenuItem key={prop.type} value={idx}>
-                  {prop.type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mindWidth: 500 }}>
+          <ConductorRow
+            conductor={neutralArrangement}
+            rowName={"Neutral"}
+            handleConductorChange={handleConductorChange}
+            handlePropertyChange={handlePropertyChange}
+            handleCorePropertyChange={handleCorePropertyChange}
+            handlePopoverOpen={handlePopoverOpen}
+            conductorDataArray={conductorData}
+            conductorPropertiesArray={conductorProperties}
+          />
         </Box>
       )}
     </Box>
