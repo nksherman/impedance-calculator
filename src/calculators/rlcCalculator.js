@@ -1,7 +1,7 @@
 // src/calculators/rlcCalculator.js
 
-const permeability_of_free_space = 4 * Math.PI * 0.0000001; // H/m
-const permissivity_free_space = 8.854 * 0.000000000001; // F/m
+
+import { permeability_of_free_space, permittivity_or_free_space } from './constants.js';
 
 /**
  * Calculates RLC values for given conductor arrangements.
@@ -12,7 +12,15 @@ const permissivity_free_space = 8.854 * 0.000000000001; // F/m
  * @param {number} gmd_mm - Geometric Mean Distance in mm
  * @returns {Object} { rlcResults, totalXlpk, totalXcpk, neutralResistance }
  */
-export function calculateRLC(frequency, temperature, gmd_mm, conductorArrangements, neutralArrangement = "" ) {
+export function calculateRLC(frequency, temperature, gmd_mm, conductorArrangements, neutralArrangement = "", calculateSkinEffect = true ) {
+
+  // Should be able to ignore skin effect, and use frequency =0 for those options
+
+  let skinFreq = frequency;
+  if (!calculateSkinEffect) {
+    skinFreq = 0
+  }
+
   // early handle frequency = 0 (DC circuit)
   if (frequency === 0) {
     const rlcResults = conductorArrangements.map(conductor => ({
@@ -36,17 +44,21 @@ export function calculateRLC(frequency, temperature, gmd_mm, conductorArrangemen
     !neutralArrangement
   ) {
     const conductor = conductorArrangements[0];
-    const GMR = conductor.gmr();
-    const r_m = conductor.circumscribedRadius();
+
     const resFn = conductor.resistanceFn();
-    const R = resFn(temperature);
-    const L = 0;
-    const C = (2 * Math.PI * permissivity_free_space) / Math.log(GMR / r_m);
-    const xcpk = frequency ? 1 / (2 * Math.PI * frequency * C) : 0; // ohms per km
+    const indFn = conductor.inductanceFn();
+    const capFn = conductor.capacitanceFn();
+    const R = resFn(temperature, skinFreq); // conditionally apply skin effect
+    const L = indFn(gmd_m);
+    const C = capFn(gmd_m);
+
+    const omega = 2 * Math.PI * frequency;
+    const xlpk = frequency ? omega * L : 0; // ohms per km
+    const xcpk = frequency ? 1 / (omega * C) : 0; // ohms per km
     return {
       rlcResults: [{ R, L, C }],
       rpk: [R * 1000], // ohms per km
-      totalXlpk: 0,
+      totalXlpk: xlpk,
       totalXcpk: xcpk,
       neutralResistance: 0,
     };
@@ -54,13 +66,12 @@ export function calculateRLC(frequency, temperature, gmd_mm, conductorArrangemen
 
   const gmd_m = gmd_mm / 1000; // Convert mm to m
   const results = conductorArrangements.map((conductor) => {
-    const r_m = conductor.circumscribedRadius();
-    const permeabilityRelative = conductor.effectivePermeability();
     const resFn = conductor.resistanceFn();
-    const GMR = conductor.gmr();
-    const R = resFn(temperature);
-    const L = permeabilityRelative * permeability_of_free_space / (2 * Math.PI) * Math.log(gmd_m / GMR); // H/m
-    const C = (2 * Math.PI * permissivity_free_space) / Math.log(gmd_m / r_m); // F/m
+    const indFn = conductor.inductanceFn();
+    const capFn = conductor.capacitanceFn();
+    const R = resFn(temperature, skinFreq);
+    const L = indFn(gmd_m); // H/m
+    const C = capFn(gmd_m); // F/m
     return { R, L, C };
   });
 
@@ -73,7 +84,7 @@ export function calculateRLC(frequency, temperature, gmd_mm, conductorArrangemen
   let neutralResistance = 0;
   if (neutralArrangement !== "") {
     const resFn = neutralArrangement.resistanceFn();
-    const R = resFn(temperature);
+    const R = resFn(temperature, frequency);
     neutralResistance = R * 1000; // ohms per km
   }
 

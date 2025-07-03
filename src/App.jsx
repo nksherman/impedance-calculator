@@ -33,9 +33,6 @@ import { calculateRLC as calculateRLCExternal } from './calculators/rlcCalculato
 import defaultConductorData from './data/conductorData.json';
 import defaultConductorProperties from './data/conductorProperties.json';
 
-const permeability_of_free_space = 4 * Math.PI * 0.0000001; // H/m
-const permissivity_free_space = 8.854*0.000000000001; // F/m
-
 const phase = ['A', 'B', 'C', 'D']; // Phase labels
 
 function formatValue(val, digits = 3) {

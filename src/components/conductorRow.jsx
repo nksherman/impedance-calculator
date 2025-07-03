@@ -106,7 +106,7 @@ function ConductorRow({
               <Typography variant="body2"><strong>Resistivity:</strong> {wp.resistivity} Ω·m</Typography>
               <Typography variant="body2"><strong>Temp Coef of Res.:</strong> {wp.temp_coef_of_resistivity} 1/°C</Typography>
               <Typography variant="body2"><strong>Relative Permeability:</strong> {wp.permeability_relative}</Typography>
-              <Typography variant="body2"><strong>Conductivity:</strong> {wp.conductivity} S/m</Typography>
+              <Typography variant="body2"><strong>Conductivity:</strong> {wp.conductivity} MS/m</Typography>
             </Box>
           ))}
         </Box>
@@ -165,7 +165,7 @@ function ConductorRow({
 
       {/* Conditional Core Material Select */}
       {coreProperty ? (
-        <FormControl>
+        <FormControl sx={{ mr: 2, minWidth: 120 }}>
           <InputLabel id={coreMaterialLabelId}>{`Core Material ${rowName}`}</InputLabel>
           <Select
             labelId={coreMaterialLabelId}

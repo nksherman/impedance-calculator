@@ -2,6 +2,9 @@ import { gmr } from "../../calculators/gmr";
 import  { ConductorProperties, RadialCoordinate, RadialConductor } from "../../data/conductorInterface";
 
 import { packStrandedConductorWithCore, packStrandedConductor } from "../../calculators/conductorPacking.ts";
+ 
+import { calculateSkinDepth } from "../../calculators/skinEffect";
+import { permeability_of_free_space, permittivity_or_free_space } from "../../calculators/constants";
 
 type ConductorPropertyWeights = ConductorProperties & {
   weight_percent: number; 
@@ -26,15 +29,17 @@ interface Conductor {
 
   circumscribedRadius(): number; // Circumscribed radius in meters
   surfaceArea(): number; // Surface area in m^2,for considering insulation
-  conductiveSurfaceArea(): number; // Conductive surface area in m^2
+  conductiveSurfaceArea(frequency: number): number; // Conductive surface area in m^2
 
   computeWeightedProperties(): ConductorPropertyWeights[]; // Weighted properties of the conductor
 
   computeConductorProperties(): ConductorProperties; // Properties of the conductor (e.g., "copper", "aluminum")
   computeCoreProperties(): ConductorProperties | null; // Properties of the core conductor, if applicable
 
-  effectivePermeability(): number; // Effective permeability of the conductor
-  resistanceFn(): (temperature: number) => number; // Function to calculate resistance/length(m) from temperature
+  resistanceFn(): (temperature: number, frequency: number) => number; // Function to calculate resistance/length(m) from temperature
+  inductanceFn(): (gmd_m: number) => number; // Inductance per length in H/m, if applicable
+  capacitanceFn(): (gmd_m: number) => number; // Capacitance per length in F/m, if applicable
+
   gmr(): number; // Geometric Mean Radius in meters
 }
 
@@ -62,12 +67,19 @@ class SolidConductor implements Conductor {
   }
 
   surfaceArea(): number {
-    return this.conductiveSurfaceArea(); // Surface area is the same as conductive surface area for a solid conductor
+    return (Math.PI * this.radius * this.radius); // Surface area is the same as conductive surface area for a solid conductor
   }
 
-  conductiveSurfaceArea(): number {
-    return  Math.PI * this.radius * this.radius; // Surface area of a cylinder (2 * π * r)
+  conductiveSurfaceArea(frequency: number = 0): number {
+    if (frequency <= 0) {
+      return this.surfaceArea(); // If frequency is not provided, return the surface area
+    }
+    const { resistivity, permeability_relative } = this.properties
+    const skinDepth = calculateSkinDepth(frequency, resistivity, permeability_relative);
+    const nonConductiveArea = Math.PI * (this.radius - skinDepth)*(this.radius - skinDepth);
+    return  (Math.PI * this.radius * this.radius) - nonConductiveArea;
   }
+
 
   computeWeightedProperties(): ConductorPropertyWeights[] {
     return [{ ...this.properties, weight_percent: 100, surface_area: this.surfaceArea() }]; // Solid conductor has 100% of its own properties
@@ -82,24 +94,40 @@ class SolidConductor implements Conductor {
     return null;
   }
 
-  effectivePermeability(): number {
-    // For a solid conductor, effective permeability is the same as the material's permeability
-    return this.properties.permeability_relative;
-  }
-
-  resistanceFn(): (temperature: number) => number {
+  resistanceFn(): (temperature: number, frequency: number) => number {
     // returns a function that calculates resistance/length based on temperature
     const { resistivity, temp_reference, temp_coef_of_resistivity } = this.properties;
-    const surfaceArea = this.conductiveSurfaceArea();
 
-    return (temperature: number) => {
-      const temp_diff = temperature - temp_reference;
-      return resistivity / surfaceArea * (1 + (temp_coef_of_resistivity * temp_diff));
+    return (temperature: number, frequency: number = 0) => {
+      const condSurfaceArea = this.conductiveSurfaceArea(frequency);
+      const tempResFactor = (temp_coef_of_resistivity * (temperature - temp_reference));
+
+      return resistivity / condSurfaceArea * (1 + tempResFactor);
+    };
+  }
+
+  inductanceFn(): (gmd_m: number) => number {
+    // returns a function that calculates inductance per length based on frequency
+    const { permeability_relative } = this.properties;
+
+    return (gmd_m: number) => {
+      const mu = permeability_of_free_space * permeability_relative;
+      return (mu / (2 * Math.PI)) * Math.log(gmd_m / this.gmr());
+    };
+  }
+
+  capacitanceFn(): (gmd_m: number) => number {
+    // returns a function that calculates capacitance per length based on frequency
+    const permittivity_relative = 1;
+
+    return (gmd_m: number) => {
+      const epsilon = permittivity_or_free_space * permittivity_relative;
+      return (2 * Math.PI * epsilon) / Math.log(gmd_m / this.gmr());
     };
   }
 
   gmr(): number {
-    return gmr(this.radius); // Geometric Mean Radius for a solid conductor
+    return gmr(this.radius); // (meter) Geometric Mean Radius for a solid conductor
   }
 }
 
@@ -130,11 +158,24 @@ class ConductorStrandIndividual implements Conductor {
   }
 
   surfaceArea(): number {
-    return this.conductiveSurfaceArea();
+    return (Math.PI * this.radius * this.radius);
   }
 
-  conductiveSurfaceArea(): number {
-    return Math.PI * this.radius * this.radius; // Surface area of the strand
+  conductiveSurfaceArea(frequency: number = 0): number {
+    if (frequency <= 0) {
+      return this.surfaceArea(); // If frequency is not provided, return the surface area
+    }
+    const { resistivity, permeability_relative } = this.properties
+    const skinDepth = calculateSkinDepth(frequency, resistivity, permeability_relative);
+
+    // if skindepth is greater than radius, then the entire surface area is conductive
+    if (skinDepth >= this.radius) {
+      return this.surfaceArea();
+    } else {
+      const nonConductiveArea = Math.PI * (this.radius - skinDepth)*(this.radius - skinDepth);
+      return  (Math.PI * this.radius * this.radius) - nonConductiveArea;
+    }
+
   }
 
   computeWeightedProperties(): ConductorPropertyWeights[] {
@@ -150,18 +191,36 @@ class ConductorStrandIndividual implements Conductor {
     return null;
   }
 
-  effectivePermeability(): number {
-    return this.properties.permeability_relative;
-  }
-
-  resistanceFn(): (temperature: number) => number {
+  resistanceFn(): (temperature: number, frequency: number) => number {
     // returns a function that calculates resistance/length based on temperature
     const { resistivity, temp_reference, temp_coef_of_resistivity } = this.properties;
-    const surfaceArea = this.conductiveSurfaceArea(); // Convert mm^2 to  m^2for consistency with resistivity in ohm-m^2/m
 
-    return (temperature: number) => {
+    return (temperature: number, frequency: number = 0) => {
+      const condSurfaceArea = this.conductiveSurfaceArea(frequency); // Convert mm^2 to  m^2for consistency with resistivity in ohm-m^2/m
+
       const temp_diff = temperature - temp_reference;
-      return resistivity / surfaceArea * (1 + (temp_coef_of_resistivity * temp_diff));
+      return resistivity / condSurfaceArea * (1 + (temp_coef_of_resistivity * temp_diff));
+    };
+  }
+
+  inductanceFn(): (gmd_m: number) => number {
+    // returns a function that calculates inductance per length based on frequency
+    const { permeability_relative } = this.properties;
+
+    return (gmd_m: number) => {
+      const mu = permeability_of_free_space * permeability_relative;
+      return (mu / (2 * Math.PI)) * Math.log(gmd_m / this.gmr());
+    };
+  }
+
+  capacitanceFn(): (gmd_m: number) => number {
+    
+    // returns a function that calculates capacitance per length based on frequency
+    const permittivity_relative = 1;
+
+    return (gmd_m: number) => {
+      const epsilon = permittivity_or_free_space * permittivity_relative;
+      return (2 * Math.PI * epsilon) / Math.log(gmd_m / this.gmr());
     };
   }
 
@@ -170,11 +229,8 @@ class ConductorStrandIndividual implements Conductor {
   }
 }
 
-
 /**
- * A bundle of conductors, 
- * 
- * 
+ * A bundle of conductors, each with its own properties and arrangement.
  */
 class StrandedConductor implements Conductor {
   name: string;
@@ -220,18 +276,17 @@ class StrandedConductor implements Conductor {
 
   surfaceArea(): number {
     // Calculate the total surface area of all conductors in the arrangement
-    return this.conductiveSurfaceArea()
+
+    return this.arrangement.reduce((total, c) => {
+      return total + c.surfaceArea();
+    }, 0);
   }
 
-  conductiveSurfaceArea(): number {
+  conductiveSurfaceArea(frequency: number): number {
+    // each conductor type has a different permeability and resistivity, so we need to calculate the conductive surface area for each conductor
+    console.log("Conductive Surface Area for ConductorStrandIndividual", frequency);
     return this.arrangement.reduce((total, c) => {
-        // Check if the conductor has a conductivity property
-        if (c.properties?.conductivity > 1) {
-            // Calculate the surface area of each conductor and add it to the total
-            return total + c.conductiveSurfaceArea();
-        }
-        // If no conductivity, return the total unchanged
-        return total;
+      return total + c.conductiveSurfaceArea(frequency);
     }, 0)
   }
 
@@ -245,9 +300,9 @@ class StrandedConductor implements Conductor {
     this.arrangement.forEach(c => {
       const prop = c.properties;
       if (propMap[prop.type]) {
-        propMap[prop.type] += c.conductiveSurfaceArea();
+        propMap[prop.type] += c.surfaceArea();
       } else {
-        propMap[prop.type] = c.conductiveSurfaceArea();
+        propMap[prop.type] = c.surfaceArea();
       }
     });
 
@@ -307,22 +362,7 @@ class StrandedConductor implements Conductor {
     , weightedProps[0]);
   }
 
-
-  effectivePermeability(): number {
-    // Calculate the effective permeability based on the arrangement
-    const weightedProps = this.weightedProperties;
-    if (weightedProps.length === 0) {
-      throw new Error("No weighted properties available for effective permeability calculation.");
-    }
-
-    // calculate and return the weighted average permeability
-    return weightedProps.reduce((total, prop) => {
-      return total + (prop.permeability_relative * (prop.weight_percent / 100));
-    }
-    , 0);
-  }
-
-  resistanceFn(): (temperature: number) => number {
+  resistanceFn(): (temperature: number, frequency: number) => number {
     // returns a function that calculates resistance/length based on temperature
 
     // get computeWeightedProperties
@@ -331,21 +371,54 @@ class StrandedConductor implements Conductor {
       throw new Error("No weighted properties available for resistance calculation.");
     }
 
-    return (temperature: number): number => {
+    return (temperature: number, frequency: number): number => {
       const resList: number[] = []
 
-      weightedProps.forEach(({ resistivity, temp_coef_of_resistivity, surface_area }) => {
+      if (frequency <= 0) {
+        weightedProps.forEach(({ temp_reference, resistivity, temp_coef_of_resistivity, surface_area }) => {
         // Adjust resistivity based on temperature
-        const adjustedResistivity = resistivity / surface_area * (1 + (temp_coef_of_resistivity * (temperature - 20))); // Assuming 20°C reference
+        const adjustedResistivity = resistivity / surface_area * (1 + (temp_coef_of_resistivity * (temperature - temp_reference)));
 
         resList.push(adjustedResistivity);
       });
+      } else {
+        // we rigorously calculate the conductive surface area for each strand
 
+        this.arrangement.forEach(c => {
+          const condSurfaceArea = c.conductiveSurfaceArea(frequency);
+          const { temp_reference, resistivity, temp_coef_of_resistivity } = c.properties;
+
+          // Adjust resistivity based on temperature
+          const adjustedResistivity = resistivity / condSurfaceArea * (1 + (temp_coef_of_resistivity * (temperature - temp_reference)));
+
+          resList.push(adjustedResistivity);
+        });
+      }
       // Return the total resistanceEq per length, note: Parallel
       const invResEq = resList.reduce((total, res) => total + (1/res), 0);
       const resEq = 1 / invResEq;
 
       return resEq;
+    };
+  }
+
+  inductanceFn(): (gmd_m: number) => number {
+    // returns a function that calculates inductance per length
+    const { permeability_relative } = this.conductorProperties;
+
+    return (gmd_m: number) => {
+      const mu = permeability_of_free_space * permeability_relative;
+      return (mu / (2 * Math.PI)) * Math.log(gmd_m / this.gmr());
+    };
+  }
+
+  capacitanceFn(): (gmd_m: number) => number {
+    // returns a function that calculates capacitance per length
+    const permittivity_relative = 1;
+
+    return (gmd_m: number) => {
+      const epsilon = permittivity_or_free_space * permittivity_relative;
+      return (2 * Math.PI * epsilon) / Math.log(gmd_m / this.gmr());
     };
   }
 

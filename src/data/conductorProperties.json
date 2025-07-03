@@ -18,9 +18,9 @@
   {
     "type": "Steel(1020)",
     "temp_reference": 20,
-    "resistivity": 0.16,
+    "resistivity": 0.000000159,
     "temp_coef_of_resistivity": 0.0006,
     "permeability_relative": 1.00001,
-    "conductivity": 6.38
+    "conductivity": 6.29
   }
 ]
