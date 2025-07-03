@@ -1,8 +1,4 @@
 // src/calculators/rlcCalculator.js
-
-
-import { permeability_of_free_space, permittivity_or_free_space } from './constants.js';
-
 /**
  * Calculates RLC values for given conductor arrangements.
  * @param {Conductor[]} conductorArrangements - Array of conductor objects
@@ -13,8 +9,7 @@ import { permeability_of_free_space, permittivity_or_free_space } from './consta
  * @returns {Object} { rlcResults, totalXlpk, totalXcpk, neutralResistance }
  */
 export function calculateRLC(frequency, temperature, gmd_mm, conductorArrangements, neutralArrangement = "", calculateSkinEffect = true ) {
-
-  // Should be able to ignore skin effect, and use frequency =0 for those options
+  const gmd_m = gmd_mm / 1000; // Convert mm to m
 
   let skinFreq = frequency;
   if (!calculateSkinEffect) {
@@ -64,7 +59,6 @@ export function calculateRLC(frequency, temperature, gmd_mm, conductorArrangemen
     };
   }
 
-  const gmd_m = gmd_mm / 1000; // Convert mm to m
   const results = conductorArrangements.map((conductor) => {
     const resFn = conductor.resistanceFn();
     const indFn = conductor.inductanceFn();

@@ -10,14 +10,10 @@ import IconButton from '@mui/material/IconButton';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import QuestionMarkIcon from '@mui/icons-material/HelpOutline';
 
-import GrainIcon from '@mui/icons-material/Grain';
 
 import GMR from '../math/gmr.jsx';
-import { createConductor, getConductorDataByName, getPropertiesByType } from './conductorHelpers';
 import ConductorStrandGraphic from './conductor/conductorStrandGraphic';
 
-import { SolidConductor, StrandedConductor } from './conductor/conductorModel.ts';
- 
 /**
  * ConductorRow component displays information about a single conductor.
  * 

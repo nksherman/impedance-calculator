@@ -81,8 +81,6 @@ function ConductorInput({
   };
 
   const handleConductorChange = (idx, value) => {
-    const currentConductor = conductorArrangements[idx];
-
     const selectedConductorData = conductorData[value];
     // current other settings
     const currentProperties = conductorProperties[propertyIndices[idx]];
@@ -100,8 +98,6 @@ function ConductorInput({
   };
 
   const handlePropertyChange = (idx, value) => {
-    const currentConductor = conductorArrangements[idx];
-
     const selectedProperties = conductorProperties[value];
     // current other settings
     const currentConductorData = conductorData[conductorIndices[idx]];
@@ -121,8 +117,6 @@ function ConductorInput({
   } 
 
   const handleCorePropertyChange = (idx, value) => {
-    const currentConductor = conductorArrangements[idx];
-
     const selectedCoreProperties = conductorProperties[value];
     // current other settings
     const currentConductorData = conductorData[conductorIndices[idx]];
