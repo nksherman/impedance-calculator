@@ -12,8 +12,6 @@ export function createConductor(condData, properties, coreProperties = null) {
   const strandRadiusM = (condData.strand_dia / 1000) / 2;
   const outerRadiusM = (condData.outer_dia / 1000) / 2;
 
-  const coreStrandRadiusM = coreProperties ? (condData.core_strand_dia / 1000) / 2 : undefined;
-
   if (condData.strand_count === 1) {
     // Solid conductor
     return new SolidConductor(
@@ -29,8 +27,8 @@ export function createConductor(condData, properties, coreProperties = null) {
       strandRadiusM,
       properties,
       condData?.core_strand_count,
-      coreStrandRadiusM,
-      coreProperties,
+      condData?.core_strand_dia ? (condData.core_strand_dia / 1000) / 2 : undefined,
+      coreProperties || properties,
       outerRadiusM
     );
   }

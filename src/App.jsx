@@ -9,11 +9,16 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import FilledInput from '@mui/material/FilledInput';
 import InputAdornment from '@mui/material/InputAdornment';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 
 import './App.css';
 import Popover from '@mui/material/Popover';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 import Inductance from './math/inductance.jsx';
 import Resistance from './math/resistance.jsx';
@@ -26,6 +31,7 @@ import NeutralInput from './components/neutralInput.jsx';
 import ConductorInput from './components/conductorInput.jsx';
 import DistanceMatrix from './components/distanceMatrix.jsx';
 import DataSetter from './components/dataSetter.jsx';
+import KFactorDisplay from './components/kFactorDisplay.jsx';
 
 import { createDefaultConductors } from './components/conductorHelpers.js';
 import { calculateRLC as calculateRLCExternal } from './calculators/rlcCalculator.js';
@@ -60,6 +66,7 @@ function App() {
   // const [appliedVoltage, setAppliedVoltage] = useState(120); // V
   // const [convHeatTransfer, setConvHeatTransfer] = useState(25); // W/m²K, typical for air
 
+  const [rpk, setRpk] = useState([]); // ohms per km
   const [totalXlpk, setTotalXlpk] = useState(0); // ohms per km
   const [totalXcpk, setTotalXcpk] = useState(0); // ohms per km
 
@@ -68,13 +75,15 @@ function App() {
   const [gmd, setGmd] = useState(0); // mm 
   const [rlcResults, setRlcResults] = useState([]);
 
+
+  const [expandPerPhase, setExpandPerPhase] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [popoverContent, setPopoverContent] = useState(null);
 
   // Remove the old calculateRLC and replace with a wrapper that uses the external calculator
   const calculateRLC = (gmd_mm, frequency) => {
 
-    const { rlcResults, totalXlpk, totalXcpk, neutralResistance } = calculateRLCExternal(
+    const { rlcResults, rpk, totalXlpk, totalXcpk, neutralResistance } = calculateRLCExternal(
       frequency,
       temperature,
       gmd_mm,
@@ -82,6 +91,7 @@ function App() {
       neutralArrangement,
     );
     setRlcResults(rlcResults);
+    setRpk(rpk);
     setTotalXlpk(totalXlpk);
     setTotalXcpk(totalXcpk);
     setNeutralResistance(neutralResistance);
@@ -167,7 +177,14 @@ function App() {
       </Box>
 
       {/* Info Box, and settings */}
-      <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 4, mt: 2 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'row', 
+        justifyContent: 'center', 
+        alignItems: 'flex-start', 
+        gap: 4, 
+        mt: 2 
+      }}>
         <Paper elevation={3} sx={{ p: 2, mt: 2, width: 400, alignSelf: 'flex-start', justifyContent: "left" }}>
           <ButtonGroup sx={{ mb: 2 }}>
             <ToggleButton
@@ -265,16 +282,14 @@ function App() {
         flexDirection: { xs: 'column', md: 'row' },
         gap: 4
       }}>
-        {/* Left: Summary values */}
-        <Box sx={{ flex: 1, minWidth: 250 }}>
+        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Summary</Typography>
           {/* Max phase resistance pk */}
-
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
             <Typography variant="body1">
               Max Phase Resistance R<sub>pk</sub>: {(() => {
-                const rFactor = unit === 'mm' ? 1000 : 304.8;
-                const maxR = Math.max(...rlcResults.map(res => res?.R ?? 0));
+                const rFactor = unit === 'mm' ? 1: 0.3048;
+                const maxR = Math.max(...rpk);
                 return `${(maxR * rFactor).toFixed(3)} Ω/${unit === 'mm' ? 'km' : 'kft'}`;
               })()}
             </Typography>
@@ -285,8 +300,8 @@ function App() {
               <Typography variant="body1">
                 Loop Resistance R<sub>loop,pk</sub>:{' '}
                 {(() => {
-                  const rFactor = unit === 'mm' ? 1000 : 304.8;
-                  const maxR = Math.max(...rlcResults.map(res => res?.R ?? 0));
+                  const rFactor = unit === 'mm' ? 1: 0.3048;
+                  const maxR = Math.max(...rpk.map(res => res?.R ?? 0));
                   if (neutralResistance > 0) {
                     // neutralResistance is in ohms per km, convert if needed
                     const neutralR = unit === 'mm' ? neutralResistance : neutralResistance * 0.3048;
@@ -296,7 +311,6 @@ function App() {
                   return 'N/A';
                 })()}
               </Typography>
-
               <IconButton
                 sx={{ p: 0 }}
                 aria-label="info"
@@ -333,100 +347,113 @@ function App() {
               <InfoOutlinedIcon />
             </IconButton>
           </Box>
+          <Accordion sx={{ mb: 2 }} expanded={expandPerPhase} onChange={() => setExpandPerPhase(!expandPerPhase)}>
+            <AccordionSummary
+              expandIcon={expandPerPhase ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            >
+              <Typography variant="h6">Per-phase Values</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              {conductorArrangements.map((conductor, idx) => {
+                if (!rlcResults[idx]) return null;
+                const lengthLabel = unit === 'mm' ? 'km' : 'kft';
+                const unitFactor = unit === 'mm' ? 1: 0.3048;
+                return (
+                  <Box key={idx} sx={{ mb: 1, display: 'flex', flexDirection: 'row' }}>
+                    <Box>
+                      <Typography variant="subtitle1">
+                        Phase {phase[idx]} 
+                      </Typography>
+                      <Typography variant="subtitle2">
+                        {conductorPropertyLabel(conductor)}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                        <Typography variant="body2">
+                          Resistance R: {(rpk[idx] * unitFactor).toFixed(3)} Ω/{lengthLabel}
+                        </Typography>
+                        <IconButton
+                          sx={{ p: 0 }}
+                          aria-label="info"
+                          color="primary"
+                          onClick={(e) => handlePopoverOpen(e, <Resistance/>)}
+                        >
+                          <InfoOutlinedIcon />
+                        </IconButton>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                        <Typography variant="body2">
+                          Inductance L: {formatValue(rlcResults[idx].L * unitFactor)} H/{lengthLabel}
+                        </Typography>
+                        <IconButton
+                          sx={{ p: 0 }}
+                          aria-label="info"
+                          color="primary"
+                          onClick={(e) => handlePopoverOpen(e, <Inductance/>)}
+                        >
+                          <InfoOutlinedIcon />
+                        </IconButton>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
+                        <Typography variant="body2">
+                          Capacitance C: {formatValue(rlcResults[idx].C * unitFactor)} F/{lengthLabel}
+                        </Typography>
+                        <IconButton
+                          sx={{ p: 0 }}
+                          aria-label="info"
+                          color="primary"
+                          onClick={(e) => handlePopoverOpen(e, <Capacitance/>)}
+                        >
+                          <InfoOutlinedIcon />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              })}
+              {neutralResistance !== 0 && neutralArrangement !== "" && (
+                <Box sx={{ mb: 1, display: 'flex', flexDirection: 'row' }}>
+                  <Box>
+                    <Typography variant="subtitle1">
+                      Neutral
+                    </Typography>
+                    <Typography data-testid="neutral-res" variant="subtitle2">
+                      {conductorPropertyLabel(neutralArrangement)}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="body2">
+                      Resistance R: {(() => {
+                        const neutralR = unit === 'mm' ? neutralResistance : neutralResistance * 0.3048;
+                        const lengthLabel = unit === 'mm' ? 'km' : 'kft';
+                        return `${neutralR.toFixed(3)} Ω/${lengthLabel}`;
+                      })()}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        </Paper>
+
+        <Box sx={{ 
+          flex: 1, 
+          minWidth: 250, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'top' 
+        }}>
+          {/*  calculate the k-factor */}
+          <KFactorDisplay
+            rlcResults={rlcResults}
+            totalXlpk={totalXlpk}
+            totalXcpk={totalXcpk}
+            neutralResistance={neutralResistance}
+            units={unit}
+          />
         </Box>
 
-        {/* Right: Per-phase values */}
-        <Box sx={{ flex: 1, minWidth: 250 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Per-phase Values</Typography>
-          {conductorArrangements.map((conductor, idx) => {
-            if (
-              !rlcResults[idx]
-            ) {
-              return null;
-            }
-
-            const lengthLabel = unit === 'mm' ? 'km' : 'kft';
-            const rFactor = unit === 'mm' ? 1000 : 304.8;
-            const lFactor = unit === 'mm' ? 1 : 0.3048;
-            const cFactor = unit === 'mm' ? 1 : 0.3048;
-
-            return (
-              <Box key={idx} sx={{ mb: 1, display: 'flex', flexDirection: 'row',  }}>
-                <Box>
-                  <Typography variant="subtitle1">
-                    Phase {phase[idx]} 
-                  </Typography>
-                  <Typography variant="subtitle2">
-                    {conductorPropertyLabel(conductor)}
-                  </Typography>
-                </Box>
-                
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
-                    <Typography variant="body2">
-                      Resistance R: {(rlcResults[idx].R * rFactor).toFixed(3)} Ω/{lengthLabel}
-                    </Typography>
-                    <IconButton
-                      sx={{ p: 0 }}
-                      aria-label="info"
-                      color="primary"
-                      onClick={(e) => handlePopoverOpen(e, <Resistance/>)}
-                    >
-                      <InfoOutlinedIcon />
-                    </IconButton>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
-                    <Typography variant="body2">
-                      Inductance L: {formatValue(rlcResults[idx].L * lFactor)} H/{lengthLabel}
-                    </Typography>
-                    <IconButton
-                      sx={{ p: 0 }}
-                      aria-label="info"
-                      color="primary"
-                      onClick={(e) => handlePopoverOpen(e, <Inductance/>)}
-                    >
-                      <InfoOutlinedIcon />
-                    </IconButton>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'left' }}>
-                    <Typography variant="body2">
-                      Capacitance C: {formatValue(rlcResults[idx].C * cFactor)} F/{lengthLabel}
-                    </Typography>
-                    <IconButton
-                      sx={{ p: 0 }}
-                      aria-label="info"
-                      color="primary"
-                      onClick={(e) => handlePopoverOpen(e, <Capacitance/>)}
-                    >
-                      <InfoOutlinedIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-              </Box>
-            );
-          })}
-          {neutralResistance !== 0 && neutralArrangement !== "" && (
-            <Box sx={{ mb: 1, display: 'flex', flexDirection: 'row' }}>
-              <Box>
-                <Typography variant="subtitle1">
-                  Neutral
-                </Typography>
-                <Typography data-testid="neutral-res" variant="subtitle2">
-                  {conductorPropertyLabel(neutralArrangement)}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2">
-                  Resistance R: {(() => {
-                    const neutralR = unit === 'mm' ? neutralResistance : neutralResistance * 0.3048;
-                    const lengthLabel = unit === 'mm' ? 'km' : 'kft';
-                    return `${neutralR.toFixed(3)} Ω/${lengthLabel}`;
-                  })()}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-        </Box>
       </Box>
 
       {/*  Popover anywhere */}

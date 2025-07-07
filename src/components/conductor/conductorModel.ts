@@ -80,6 +80,12 @@ class SolidConductor implements Conductor {
     }
     const { resistivity, permeability_relative } = this.properties
     const skinDepth = calculateSkinDepth(frequency, resistivity, permeability_relative);
+
+    // if skindepth is greater than radius, then the entire surface area is conductive
+    if (skinDepth >= this.radius) {
+      return this.surfaceArea();
+    }
+
     const nonConductiveArea = Math.PI * (this.radius - skinDepth)*(this.radius - skinDepth);
     return  (Math.PI * this.radius * this.radius) - nonConductiveArea;
   }
