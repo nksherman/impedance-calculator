@@ -20,11 +20,11 @@ jest.mock('./conductor/conductorModel.ts', () => {
 });
 
 
-
 const mockConductorData = [
   { name: 'CondA', strand_count: 7, strand_dia: 1.1, outer_dia: 3.3 },
   { name: 'CondB', strand_count: 19, strand_dia: 0.9, outer_dia: 4.5 },
   { name: 'CondCored', strand_count: 37, strand_dia: 0.5, outer_dia: 6.0, core_strand_count: 2, core_strand_dia: 2.9235 },
+  { name: 'CondD', strand_count: 1, strand_dia: 10.0, outer_dia: 10.0 } // Solid conductor
 ];
 
 const mockConductorProperties = [
@@ -92,6 +92,7 @@ describe('ConductorRow', () => {
       outer_dia: 6.0,
       core_strand_count: 2,
       core_strand_dia: 2.9235,
+      compositeCore: true,
 
       weightedProperties: {
         type: 'Copper',
@@ -112,6 +113,31 @@ describe('ConductorRow', () => {
       expect(screen.getByRole('combobox', { name: /Core Material A/i })).toBeInTheDocument();
     });
 
+    it('does not show core material sleect with no composite core', () => {
+      const nonCoreConductor = {
+        name: 'CondA',
+        strand_count: 7,
+        strand_dia: 1.1,
+
+        outer_dia: 3.3,
+        compositeCore: false,
+        weightedProperties: {
+          type: 'Copper',
+          weight_percent: 100,
+          temp_reference: 20,
+          resistivity: 1.68e-8,
+          temp_coef_of_resistivity: 0.0039,
+
+          permeability_relative: 1,
+          conductivity: 5.96e7
+        },
+        conductorProperties: { type: 'Copper' },
+        arrangement: true
+      };
+      setup({ conductor: nonCoreConductor });
+      expect(screen.queryByRole('combobox', { name: /Core Material A/i }))
+        .not.toBeInTheDocument();
+    });
 
     it('calls handleCorePropertyChange when core material select changes', () => {
       setup({ conductor: mockCoreConductor });

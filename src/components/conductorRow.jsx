@@ -64,7 +64,12 @@ function ConductorRow({
   // Get weighted properties array
   const weightedProps = conductor.weightedProperties || [];
   const thisProperty = conductor.conductorProperties || null;
-  const coreProperty = conductor.coreProperties || null;
+  let coreProperty = null;
+  if (conductor.compositeCore) {
+    // there is a core, 
+    coreProperty = conductor.coreProperties;
+  }
+
 
   const formatConductorInfo = (conductor, data) => {
     if (!data && weightedProps.length === 0) return <Typography variant="body1">No data available</Typography>;

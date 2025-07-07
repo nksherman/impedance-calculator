@@ -11,6 +11,8 @@ type ConductorPropertyWeights = ConductorProperties & {
   surface_area: number; // Optional surface area for weighted properties
 } 
 
+type ConductorType = string; // Extend with more types as needed
+
 /**
  * All Conductors, starting with a solid wire
  * 
@@ -20,7 +22,8 @@ interface Conductor {
   weightedProperties: ConductorPropertyWeights[];
   conductorProperties: ConductorProperties;
   coreProperties: ConductorProperties | null;
-  
+  compositeCore: ConductorType | null; // Whether the conductor has a composite core
+
   // properties: computeConductorProperties; // Properties of the conductor (e.g., "copper", "aluminum")
 
   /* static properties */
@@ -50,7 +53,8 @@ class SolidConductor implements Conductor {
   
   weightedProperties: ConductorPropertyWeights[];
   conductorProperties: ConductorProperties;
-  coreProperties: null; // Solid conductors do not have a core, so this is
+  coreProperties: null;
+  compositeCore: null;
 
   constructor(name: string, radius: number, properties: ConductorProperties ) {
     this.name = name;
@@ -140,6 +144,7 @@ class ConductorStrandIndividual implements Conductor {
   weightedProperties: ConductorPropertyWeights[];
   conductorProperties: ConductorProperties;
   coreProperties: null; // Solid conductors do not have a core, so this is
+  compositeCore: null;
   
 
   constructor(r: number, theta: number, radius: number, properties: ConductorProperties) {
@@ -236,13 +241,14 @@ class StrandedConductor implements Conductor {
   name: string;
   arrangement: ConductorStrandIndividual[];
   radius: number;
+  compositeCore: ConductorType | null; // Whether the conductor has a composite core
 
   weightedProperties: ConductorPropertyWeights[];
   conductorProperties: ConductorProperties;
   coreProperties: ConductorProperties | null;
   
   constructor(name: string, strands: number, strandRadius: number, strandProperties: ConductorProperties, 
-    coreStrands?: number, coreRadius?: number, computeCoreProperties?: ConductorProperties,
+    coreStrands?: number, coreRadius?: number, coreProperties?: ConductorProperties,
     outerRadius?: number
   ) {
       this.name = name;
@@ -254,10 +260,12 @@ class StrandedConductor implements Conductor {
         throw new Error("Strand radius must be greater than 0.");
       } 
 
-      if (coreStrands && coreRadius && computeCoreProperties) {
-        const theseStrands: RadialConductor[] = packStrandedConductorWithCore(strands, strandRadius, coreStrands, coreRadius, strandProperties, computeCoreProperties);
+      if (coreStrands && coreRadius && coreProperties) {
+        this.compositeCore = coreProperties.type || null; // Use the type of the core properties, or null if not defined
+        const theseStrands: RadialConductor[] = packStrandedConductorWithCore(strands, strandRadius, coreStrands, coreRadius, strandProperties, coreProperties);
         this.arrangement = theseStrands.map(s => new ConductorStrandIndividual(s.r, s.theta, s.radius, s.properties));
       } else {
+        this.compositeCore = null
         const theseStrands: RadialConductor[] = packStrandedConductor(strands, strandRadius, strandProperties);
         this.arrangement = theseStrands.map(s => new ConductorStrandIndividual(s.r, s.theta, s.radius, s.properties));
       }
@@ -344,12 +352,19 @@ class StrandedConductor implements Conductor {
     , weightedProps[0]);
   }
 
-  computeCoreProperties(): ConductorProperties {
+  computeCoreProperties(): ConductorProperties | null {
     // Solid conductors do not have a core, so return the same properties
+    if (!this.compositeCore) {
+      return null;
+    }
+
     const weightedProps = this.weightedProperties;
 
     if (weightedProps.length === 0) {
       throw new Error("No weighted properties available for core properties.");
+    } else if (weightedProps.length === 1) {
+      // If there is only one property, return it directly
+      return weightedProps[0];
     } else if (weightedProps.length > 2) {
       // If there are multiple properties, we can log them for debugging
       console.warn("More than 2 properties found, returning the lowest weighted property.");
