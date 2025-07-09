@@ -55,14 +55,17 @@ jest.mock('./components/neutralInput', () => (props) => {
   );
 });
 
-jest.mock('./components/resultsDisplay', () => (props) => (
+jest.mock('./components/resultsDisplay', () => ({handlePopoverOpen, ...props}) => (
   <div data-testid="results-display">
     <h2>Results</h2>
-    {/* No data parsed, with place holder conductorModels */}
+    <button
+      data-testid="test-popover-btn"
+      onClick={e => handlePopoverOpen(e, <div>Popover Test Content</div>)}
+    >
+      Show Popover
+    </button>
   </div>
 ));
-
-
 
 describe('App', () => {
   it('renders main title and child components', () => {
@@ -74,6 +77,26 @@ describe('App', () => {
     expect(screen.getByLabelText(/frequency/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/temperature/i)).toBeInTheDocument();
   }); 
+
+  it('toggles units between mm and inches', () => {
+    render(<App />);
+    const mmButton = screen.getByRole('button', { name: 'mm' });
+    const inButton = screen.getByRole('button', { name: 'inches' });
+
+    // Initially, mm should be selected
+    expect(mmButton.getAttribute('aria-pressed')).toBe('true');
+    expect(inButton.getAttribute('aria-pressed')).toBe('false');
+
+    // Click inches, now inches should be selected
+    fireEvent.click(inButton);
+    expect(mmButton.getAttribute('aria-pressed')).toBe('false');
+    expect(inButton.getAttribute('aria-pressed')).toBe('true');
+
+    // Click mm, now mm should be selected again
+    fireEvent.click(mmButton);
+    expect(mmButton.getAttribute('aria-pressed')).toBe('true');
+    expect(inButton.getAttribute('aria-pressed')).toBe('false');
+  });
 
   it('frequency input accepts valid numbers and rejects invalid', () => {
     render(<App />);
@@ -134,4 +157,13 @@ describe('App', () => {
     // ResultsDisplay should be present (look for Results heading)
     expect(screen.getByText(/Results/i)).toBeInTheDocument();
   });
+
+  it('shows and hides popover using App\'s handlePopoverOpen/handlePopoverClose', () => {
+    render(<App />);
+    fireEvent.click(screen.getByTestId('test-popover-btn'));
+    expect(screen.getByText('Popover Test Content')).toBeInTheDocument();
+  });
+
 });
+
+  

@@ -24,17 +24,6 @@ import { calculateRLC as calculateRLCExternal } from './calculators/rlcCalculato
 import defaultConductorData from './data/conductorData.json';
 import defaultConductorProperties from './data/conductorProperties.json';
 
-const phase = ['A', 'B', 'C', 'D']; // Phase labels
-
-function formatValue(val, digits = 3) {
-  if (val === 0) return "0";
-  const absVal = Math.abs(val);
-  if (absVal >= 0.01 && absVal < 1000) {
-    return val.toFixed(digits);
-  }
-  return val.toExponential(digits);
-}
-
 function App() {
   const [neutralArrangement, setNeutralArrangement] = useState("");
   const [conductorArrangements, setConductorArrangements] = useState(() => createDefaultConductors(3, defaultConductorData, defaultConductorProperties));
@@ -233,7 +222,6 @@ function App() {
         flexDirection: { xs: 'column', md: 'row' },
         gap: 4
       }}>
-        { rlcResults.length > 0 && (
           <ResultsDisplay
             rlcResults={rlcResults}
             conductors={conductorArrangements}
@@ -243,7 +231,6 @@ function App() {
             unit={unit}
             handlePopoverOpen={handlePopoverOpen}
           />
-        )}
       </Box>
       {/*  Popover anywhere */}
       <Popover

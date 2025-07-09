@@ -43,7 +43,7 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
   const factor = unit === 'mm' ? 1000 : 304.8; // per meter to per km/kft
 
   // Calculate per-phase values
-  const phaseValues = rlcResults.map(res => calcPhaseValues(res, frequency));
+  const phaseValues = rlcResults.length > 0 ? rlcResults.map(res => calcPhaseValues(res, frequency)) : [];
 
   // Check if all phases are the same
   const allSame = arraysEqual(rlcResults, Array(rlcResults.length).fill(rlcResults[0]));
@@ -187,28 +187,38 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
             </TableRow>
           </TableHead>
           <TableBody>
-            {(allSame ? [phaseValues[0]] : phaseValues).map((val, idx) => {
-              const thisCond = conductors[idx];
-              const phaseCount = rlcResults.length === 3 ? 3 : 1;
-              const vbase = phaseCount === 3 ? vll : vln;
-              const kFactor = getKFactor(val.Z * factor, vbase, phaseCount, val.PF);
-              return (
-                <TableRow key={idx}>
-                  <TableCell>{allSame ? 'All' : String.fromCharCode(65 + idx)}</TableCell>
-                  <TableCell>
-                    {conductorPropertyLabel(thisCond)}
-                  </TableCell>
-                  <TableCell align="right">{(val.R * factor).toFixed(4)}</TableCell>
-                  <TableCell align="right">{val.L.toExponential(4)}</TableCell>
-                  <TableCell align="right">{(val.Xl * factor).toFixed(4)}</TableCell>
-                  <TableCell align="right">{val.C.toExponential(4)}</TableCell>
-                  <TableCell align="right">- - -</TableCell> {/* {(val.Xc * factor).toFixed(3)} */}
-                  <TableCell align="right">{(val.Z * factor).toFixed(4)}</TableCell>
-                  <TableCell align="right">{(kFactor * 1000).toFixed(5)}</TableCell>
-                  <TableCell align="right">{val.PF.toFixed(4)}</TableCell>
-                </TableRow>
-              );
-            })}
+            {(rlcResults.length > 0 && phaseValues.length > 0) ? (
+              (allSame ? [phaseValues[0]] : phaseValues).map((val, idx) => {
+                const phaseCount = rlcResults.length === 3 ? 3 : 1;
+                const vbase = phaseCount === 3 ? vll : vln;
+                const kFactor = val?.Z ? getKFactor(val.Z * factor, vbase, phaseCount, val.PF) : 0;
+
+                const rowLabel = allSame ? 'All' : String.fromCharCode(65 + idx);
+                const thisCond = conductors ? conductors[idx] : null;
+                const condLabel = conductorPropertyLabel(thisCond);
+
+                return (
+                  <TableRow key={idx}>
+                    <TableCell key={`row-phase-${idx}`}>{rowLabel}</TableCell>
+                    <TableCell key={`row-cond-${idx}`}>
+                      {condLabel ? condLabel : <Typography>-</Typography>}
+                    </TableCell>
+                    <TableCell key={`row-res-${idx}`} align="right">{val?.R ? (val.R * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
+                    <TableCell key={`row-ind-${idx}`} align="right">{val?.L ? val.L.toExponential(4) : <Typography>-</Typography>}</TableCell>
+                    <TableCell key={`row-xl-${idx}`} align="right">{val?.Xl ? (val.Xl * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
+                    <TableCell key={`row-c-${idx}`} align="right">{val?.C ? val.C.toExponential(4) : <Typography>-</Typography>}</TableCell>
+                    <TableCell key={`row-xc-${idx}`} align="right">- - -</TableCell> {/* val?.Xc ? (val.Xc * factor).toFixed(4) : <Typography>-</Typography> not calculated in this example */}
+                    <TableCell key={`row-z-${idx}`} align="right">{val?.Z ? (val.Z * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
+                    <TableCell key={`row-kf-${idx}`} align="right">{kFactor ? (kFactor * 1000).toFixed(5) : <Typography>-</Typography>}</TableCell>
+                    <TableCell key={`row-pf-${idx}`} align="right">{val?.PF ? val.PF.toFixed(4) : <Typography>-</Typography>}</TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow key="no-results">
+                <TableCell colSpan={11} align="center">—</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
