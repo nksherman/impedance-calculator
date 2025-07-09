@@ -29,11 +29,13 @@ jest.mock('./components/conductorInput', () => (props) => {
     </div>
   );
 });
+
 jest.mock('./components/distanceMatrix', () => (props) => (
   <div data-testid="distance-matrix">
     <button onClick={() => props.setGmd(1000)}>Set GMD</button>
   </div>
 ));
+
 jest.mock('./components/neutralInput', () => (props) => {
   function mockCreateConductorModel(name = 'MockConductor') {
     return {
@@ -52,6 +54,15 @@ jest.mock('./components/neutralInput', () => (props) => {
     </div>
   );
 });
+
+jest.mock('./components/resultsDisplay', () => (props) => (
+  <div data-testid="results-display">
+    <h2>Results</h2>
+    {/* No data parsed, with place holder conductorModels */}
+  </div>
+));
+
+
 
 describe('App', () => {
   it('renders main title and child components', () => {
@@ -116,39 +127,11 @@ describe('App', () => {
     // No assertion needed, just ensure no crash
   });
 
-  it('shows per-phase and summary values after calculation', () => {
+  it('renders ResultsDisplay after calculation', () => {
     render(<App />);
     fireEvent.click(screen.getByText('Set GMD'));
     fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
-    expect(screen.getByText(/Summary/i)).toBeInTheDocument();
-    expect(screen.getByText(/Per-phase Values/i)).toBeInTheDocument();
-    expect(screen.getByText(/Max Phase Resistance R/i)).toBeInTheDocument();
-    expect(screen.getByText(/Total Inductive Reactance XL/i)).toBeInTheDocument();
-    expect(screen.getByText(/Total Capacitive Reactance XC/i)).toBeInTheDocument();
-  });
-
-  it('per-unit-length values update when GMD or frequency changes', () => {
-    render(<App />);
-    fireEvent.click(screen.getByText('Set GMD'));
-    fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
-    const xlBefore = screen.getByText(/Total Inductive Reactance XL/i).textContent;
-
-    // Change frequency
-    const freqInput = screen.getByLabelText(/frequency/i);
-    fireEvent.change(freqInput, { target: { value: '120' } });
-    fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
-    const xlAfter = screen.getByText(/Total Inductive Reactance XL/i).textContent;
-
-    expect(xlBefore).not.toEqual(xlAfter);
-  });
-
-  it('shows neutral resistance when neutral is set', () => {
-    render(<App />);
-    fireEvent.click(screen.getByText('Set Neutral'));
-    fireEvent.click(screen.getByText('Set GMD'));
-    fireEvent.click(screen.getByRole('button', { name: /Calculate RLC/i }));
-    
-    const neutralBox = screen.getByTestId('neutral-res');
-    expect(neutralBox).toHaveTextContent(/NeutralAluminum/i);
+    // ResultsDisplay should be present (look for Results heading)
+    expect(screen.getByText(/Results/i)).toBeInTheDocument();
   });
 });

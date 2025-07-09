@@ -15,7 +15,7 @@ import IconButton from '@mui/material/IconButton';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
-import GMD from '../math/gmd.jsx';
+import GMD from './math/gmd.jsx';
 
 const phaseLabel  = ['A', 'B', 'C', 'D'];
 

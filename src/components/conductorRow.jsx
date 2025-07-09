@@ -11,7 +11,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import QuestionMarkIcon from '@mui/icons-material/HelpOutline';
 
 
-import GMR from '../math/gmr.jsx';
+import GMR from './math/gmr.jsx';
 import ConductorStrandGraphic from './conductor/conductorStrandGraphic';
 
 /**
