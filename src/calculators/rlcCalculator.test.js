@@ -709,9 +709,7 @@ describe("ACSR Conductor Tests", () => {
   }
 
   describe("2ACSR Conductor Tests", () => {
-
-
-    it("calculates each conductor", () => {
+    it("calculates each conductor percent difference", () => {
       const MmToFt = 0.3048;
       const mmToMile= 0.000621371;
       const gmd = 304.8 //mm 1ft = 304.8
@@ -748,205 +746,41 @@ describe("ACSR Conductor Tests", () => {
         percDiffs.push(thisObj);
       });
 
-      // console.table(percDiffs);
+      console.table(percDiffs);
     });
 
-    // it("calculates 2-6/1 ACSR at 1', 25C, 60hz", () => {
-    //   const {arrangement, testAgainst} = handleGetConductor("2-6/1 ACSR", "Aluminum", "Steel(1020)");
+    it("calculates 2-6/1 ACSR at 1', 25C, 60hz", () => {
+      const {arrangement, testAgainst} = handleGetConductor("2-6/1 ACSR", "Aluminum", "Steel(1020)");
 
-    //   const frequency = 60; // Hz
-    //   const temperature = 25; // Celsius
-    //   const gmd = 304.8 //mm 1ft = 304.8mm
+      const frequency = 60; // Hz
+      const temperature = 25; // Celsius
+      const gmd = 304.8 //mm 1ft = 304.8mm
       
-    //   const MmToFt = 0.3048;
-    //   const mmToMile= 0.000621371;
+      const MmToFt = 0.3048;
+      const mmToMile= 0.000621371;
 
-    //   const rlc = calculateRLC(frequency, temperature, gmd, [arrangement]);
+      const rlc = calculateRLC(frequency, temperature, gmd, [arrangement]);
 
-    //   const maxR = Math.max(...rlc.rpk);
+      const maxR = Math.max(...rlc.rpk);
 
-    //   const calcR = maxR*MmToFt;
-    //   const calcL = rlc.totalXlpk*MmToFt;
-    //   const calcC = rlc.totalXcpk*MmToFt/100000000000;
+      const calcR = maxR*MmToFt;
+      const calcL = rlc.totalXlpk*MmToFt;
+      const calcC = rlc.totalXcpk*MmToFt/100000000000;
 
-    //   try {
-    //     expect(calcR).toBeCloseTo(testAgainst.R_60_25, 2);
-    //     expect(calcL).toBeCloseTo(testAgainst.L_60_25, 2);
-    //     expect(calcC).toBeCloseTo(testAgainst.C_60, 2);
-    //   } catch (e) {
-    //     // eslint-disable-next-line no-console
-    //     console.error(`\nComparison failed for 2-6/1 ACSR at 1', 25C, 60hz: \n
-    //       Resistance: calc=${calcR}, expected=${testAgainst.R_60_25} \n
-    //       Inductive Reactance: calc=${calcL}, expected=${testAgainst.L_60_25} \n
-    //       Capacitive Reactance: calc=${calcC}, expected=${testAgainst.C_60} \n
-    //     `);
-    //     throw e;
-    //   }
-    // });
+      try {
+        expect(calcR).toBeCloseTo(testAgainst.R_60_25, 2);
+        expect(calcL).toBeCloseTo(testAgainst.L_60_25, 2);
+        expect(calcC).toBeCloseTo(testAgainst.C_60, 2);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(`\nComparison failed for 2-6/1 ACSR at 1', 25C, 60hz: \n
+          Resistance: calc=${calcR}, expected=${testAgainst.R_60_25} \n
+          Inductive Reactance: calc=${calcL}, expected=${testAgainst.L_60_25} \n
+          Capacitive Reactance: calc=${calcC}, expected=${testAgainst.C_60} \n
+        `);
+        throw e;
+      }
+    });
 
-    // it("calculates 2-6/1 ACSR at 1', 50C, 60hz", () => {
-    //   const {arrangement, testAgainst} = handleGetConductor("2-6/1 ACSR", "Aluminum", "Steel(1020)");
-
-    //   const frequency = 60; // Hz
-    //   const temperature = 50; // Celsius
-    //   const gmd = 304.8 //mm 1ft = 304.8mm
-      
-    //   const MmToFt = 0.3048;
-    //   const mmToMile= 0.000621371;
-
-    //   const rlc = calculateRLC(frequency, temperature, gmd, [arrangement]);
-
-    //   const maxR = Math.max(...rlc.rpk);
-
-    //   const calcR = maxR*MmToFt;
-    //   const calcL = rlc.totalXlpk*MmToFt;
-    //   const calcC = rlc.totalXcpk*MmToFt/100000000000;
-
-    //   try {
-    //     expect(calcR).toBeCloseTo(testAgainst.R_60_50, 2);
-    //     expect(calcL).toBeCloseTo(testAgainst.L_60_50, 2);
-    //     expect(calcC).toBeCloseTo(testAgainst.C_60,2); // convert to/from megaohm
-    //   } catch (e) {
-    //     // eslint-disable-next-line no-console
-    //     console.error(`\nComparison failed for 2-6/1 ACSR at 1', 50C, 60hz: \n
-    //       Resistance: calc=${calcR}, expected=${testAgainst.R_60_50} \n
-    //       Inductive Reactance: calc=${calcL}, expected=${testAgainst.L_60_50} \n
-    //       Capacitive Reactance: calc=${calcC}, expected=${testAgainst.C_60} \n
-    //     `);
-    //     throw e;
-    //   }
-    // });
-
-    // it("calculates 2-6/1 ACSR at 1', 75C, 60hz", () => {
-    //   const {arrangement, testAgainst} = handleGetConductor("2-6/1 ACSR", "Aluminum", "Steel(1020)");
-
-    //   const frequency = 60; // Hz
-    //   const temperature = 75; // Celsius
-    //   const gmd = 304.8 //mm 1ft = 304.8mm
-      
-    //   const MmToFt = 0.3048;
-    //   const mmToMile= 0.000621371;
-
-    //   const rlc = calculateRLC(frequency, temperature, gmd, [arrangement]);
-
-    //   const maxR = Math.max(...rlc.rpk);
-
-    //   const calcR = maxR*MmToFt;
-    //   const calcL = rlc.totalXlpk*MmToFt;
-    //   const calcC = rlc.totalXcpk*MmToFt/100000000000;
-
-    //   try {
-    //     expect(calcR).toBeCloseTo(testAgainst.R_60_75, 2);
-    //     expect(calcL).toBeCloseTo(testAgainst.L_60_75, 2);
-    //     expect(calcC).toBeCloseTo(testAgainst.C_60, 2); // convert to/from megaohm
-    //   } catch (e) {
-    //     // eslint-disable-next-line no-console
-    //     console.error(`\nComparison failed for 2-6/1 ACSR at 1', 75C, 60hz: \n
-    //       Resistance: calc=${calcR}, expected=${testAgainst.R_60_75} \n
-    //       Inductive Reactance: calc=${calcL}, expected=${testAgainst.L_60_75} \n
-    //       Capacitive Reactance: calc=${calcC}, expected=${testAgainst.C_60} \n
-    //     `);
-    //     throw e;
-    //   }
-    // });
-
-    // it("calculates 2-7/1 ACSR at 1', 25C, 60hz", () => { 
-    //   const {arrangement, testAgainst} = handleGetConductor("2-7/1 ACSR", "Aluminum", "Steel(1020)");
-
-    //   const frequency = 60; // Hz
-    //   const temperature = 25; // Celsius
-    //   const gmd = 304.8 //mm 1ft = 304.8mm
-      
-    //   const MmToFt = 0.3048;
-    //   const mmToMile= 0.000621371;
-
-    //   const rlc = calculateRLC(frequency, temperature, gmd, [arrangement]);
-
-    //   const maxR = Math.max(...rlc.rpk);
-
-    //   const calcR = maxR*MmToFt;
-    //   const calcL = rlc.totalXlpk*MmToFt;
-    //   const calcC = rlc.totalXcpk*MmToFt/100000000000;
-
-    //   try {
-    //     expect(calcR).toBeCloseTo(testAgainst.R_60_25, 2);
-    //     expect(calcL).toBeCloseTo(testAgainst.L_60_25, 2);
-    //     expect(calcC).toBeCloseTo(testAgainst.C_60, 2); // convert to/from megaohm
-    //   } catch (e) {
-    //     // eslint-disable-next-line no-console
-    //     console.error(`\nComparison failed for 2-7/1 ACSR at 1', 25C, 60hz: \n
-    //       Resistance: calc=${calcR}, expected=${testAgainst.R_60_25} \n
-    //       Inductive Reactance: calc=${calcL}, expected=${testAgainst.L_60_25} \n
-    //       Capacitive Reactance: calc=${calcC}, expected=${testAgainst.C_60} \n
-    //     `);
-    //     throw e;
-    //   }
-    // });
-
-    // it("calculates 2-7/1 ACSR at 1', 50C, 60hz", () => {
-    //   const {arrangement, testAgainst} = handleGetConductor("2-7/1 ACSR", "Aluminum", "Steel(1020)");
-
-    //   const frequency = 60; // Hz
-    //   const temperature = 50; // Celsius
-    //   const gmd = 304.8 //mm 1ft = 304.8mm
-      
-    //   const MmToFt = 0.3048;
-    //   const mmToMile= 0.000621371;
-
-    //   const rlc = calculateRLC(frequency, temperature, gmd, [arrangement]);
-
-    //   const maxR = Math.max(...rlc.rpk);
-
-    //   const calcR = maxR*MmToFt;
-    //   const calcL = rlc.totalXlpk*MmToFt;
-    //   const calcC = rlc.totalXcpk*MmToFt/100000000000;
-
-    //   try {
-    //     expect(calcR).toBeCloseTo(testAgainst.R_60_50, 2);
-    //     expect(calcL).toBeCloseTo(testAgainst.L_60_50, 2);
-    //     expect(calcC).toBeCloseTo(testAgainst.C_60, 2);
-    //   } catch (e) {
-    //     // eslint-disable-next-line no-console
-    //     console.error(`\nComparison failed for 2-7/1 ACSR at 1', 50C, 60hz: \n
-    //       Resistance: calc=${calcR}, expected=${testAgainst.R_60_50} \n
-    //       Inductive Reactance: calc=${calcL}, expected=${testAgainst.L_60_50} \n
-    //       Capacitive Reactance: calc=${calcC}, expected=${testAgainst.C_60} \n
-    //     `);
-    //     throw e;
-    //   }
-    // });
-
-    // it("calculates 2-7/1 ACSR at 1', 75C, 60hz", () => {
-    //   const {arrangement, testAgainst} = handleGetConductor("2-7/1 ACSR", "Aluminum", "Steel(1020)");
-
-    //   const frequency = 60; // Hz
-    //   const temperature = 75; // Celsius
-    //   const gmd = 304.8 //mm 1ft = 304.8mm
-      
-    //   const MmToFt = 0.3048;
-    //   const mmToMile= 0.000621371;
-
-    //   const rlc = calculateRLC(frequency, temperature, gmd, [arrangement]);
-
-    //   const maxR = Math.max(...rlc.rpk);
-
-    //   const calcR = maxR*MmToFt;
-    //   const calcL = rlc.totalXlpk*MmToFt;
-    //   const calcC = rlc.totalXcpk*MmToFt/100000000000;
-
-    //   try {
-    //     expect(calcR).toBeCloseTo(testAgainst.R_60_75, 2);
-    //     expect(calcL).toBeCloseTo(testAgainst.L_60_75, 2);
-    //     expect(calcC).toBeCloseTo(testAgainst.C_60, 2);
-    //   } catch (e) {
-    //     // eslint-disable-next-line no-console
-    //     console.error(`\nComparison failed for 2-7/1 ACSR at 1', 75C, 60hz: \n
-    //       Resistance: calc=${calcR}, expected=${testAgainst.R_60_75} \n
-    //       Inductive Reactance: calc=${calcL}, expected=${testAgainst.L_60_75} \n
-    //       Capacitive Reactance: calc=${calcC}, expected=${testAgainst.C_60} \n
-    //     `);
-    //     throw e;
-    //   }
-    // });
   });
 });
