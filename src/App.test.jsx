@@ -70,7 +70,7 @@ jest.mock('./components/resultsDisplay', () => ({handlePopoverOpen, ...props}) =
 describe('App', () => {
   it('renders main title and child components', () => {
     render(<App />);
-    expect(screen.getByText(/Geometric Mean Distance Calculator/i)).toBeInTheDocument();
+    expect(screen.getByText(/Voltage Drop GMR\/GMD Calculator/i)).toBeInTheDocument();
     expect(screen.getByTestId('conductor-input')).toBeInTheDocument();
     expect(screen.getByTestId('distance-matrix')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Calculate RLC/i })).toBeInTheDocument();
