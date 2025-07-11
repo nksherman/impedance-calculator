@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, InputAdornment } from '@mui/material';
+
+import Box from '@mui/material/Box';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import Paper from '@mui/material/Paper';
 
 import ToolTip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import FilledInput from '@mui/material/FilledInput';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import Inductance from './math/inductance.jsx';
 import Resistance from './math/resistance.jsx';
-import ResistanceLoop from './math/resistanceLoop.jsx';
 import Capacitance from './math/capacitance.jsx';
 import ReactanceInductance from './math/reactanceInductance.jsx';
 import ReactanceCapacitance from './math/reactanceCapacitance.jsx';
@@ -108,6 +118,8 @@ function ResultsDisplay({ rlcResults, conductors, frequency, phaseType, vll, vln
     const lengthInUnits = parseFloat(length) / 1000;
     const vbase = phaseType === "3" ? vll : vln;
     const phaseMult = phaseType === "3" ? Math.sqrt(3) : 2;
+    
+    // TODO: The total current is distributed across phases, so we need to calculate it per phase
     const drops = phaseValues.map(val => {
       const I = (parseFloat(kva)*1000) / (phaseMult * vbase);
 
@@ -116,11 +128,6 @@ function ResultsDisplay({ rlcResults, conductors, frequency, phaseType, vll, vln
       return I * Z * lengthInUnits * factor;
     });
     setVoltageDrops(drops);
-
-    const dropK = phaseValues.map(val => {
-      const K = getKFactor(val.R* factor, val.Xl* factor, vbase, phaseType, val.PF);
-      return K * parseFloat(kva) * lengthInUnits;
-    });
   }
 
   const conductorPropertyLabel = (conductor) => {
@@ -146,7 +153,7 @@ function ResultsDisplay({ rlcResults, conductors, frequency, phaseType, vll, vln
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2, overflowX: 'auto' }}>
       <Typography variant="h6" sx={{ mb: 2 }}>Results</Typography>
       <Box sx ={{ display: "flex", flexDirection: 'row', alignItems: 'center', mb: 2 }}>
         <Typography variant="subtitle1" sx={{ mb: 1, pr: 2 }}>
@@ -177,7 +184,7 @@ function ResultsDisplay({ rlcResults, conductors, frequency, phaseType, vll, vln
           />
         </Box>
       </Box>
-      <TableContainer component={Paper} sx={{ mb: 2 }}>
+      <TableContainer component={Paper} sx={{ mb: 2  }}>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ '& > *': { px: 1 } }}>
@@ -297,15 +304,16 @@ function ResultsDisplay({ rlcResults, conductors, frequency, phaseType, vll, vln
       </TableContainer>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <FilledInput
+        <TextField
           label="Load (kVA)"
           value={kva}
           onChange={e => setKva(e.target.value)}
           type="number"
           size="small"
-          InputProps={{
-            endAdornment: <InputAdornment position="end">kVA</InputAdornment>,
-            inputProps: { min: 0 }
+          slotProps={{
+            input: {
+              endAdornment: <InputAdornment position="start">kVA</InputAdornment>
+            }
           }}
         />
         <TextField
@@ -314,9 +322,10 @@ function ResultsDisplay({ rlcResults, conductors, frequency, phaseType, vll, vln
           onChange={e => setLength(e.target.value)}
           type="number"
           size="small"
-          InputProps={{
-            endAdornment: <InputAdornment position="end">{lengthInputLabel}</InputAdornment>,
-            inputProps: { min: 0 }
+          slotProps={{
+            input: {
+              endAdornment: <InputAdornment position="start">{lengthInputLabel}</InputAdornment>
+            }
           }}
         />
         <Box sx={{ display: 'flex', alignItems: 'center' }}>

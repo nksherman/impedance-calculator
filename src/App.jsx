@@ -58,7 +58,7 @@ function App() {
   }, [conductorArrangements]);
 
   const calculateRLC = (gmd_mm, frequency) => {
-    const { rlcResults, rpk, totalXlpk, totalXcpk, neutralResistance } = calculateRLCExternal(
+    const { rlcResults,  } = calculateRLCExternal( // rpk, totalXlpk, totalXcpk, neutralResistance
       frequency,
       temperature,
       gmd_mm,

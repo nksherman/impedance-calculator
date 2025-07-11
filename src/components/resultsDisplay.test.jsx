@@ -93,7 +93,7 @@ describe('ResultsDisplay Component', () => {
     ];
     renderResultsDisplay(mockRlcResults, mockConductors);
     expect(screen.getAllByRole('row').length).toBeGreaterThan(1); // header + 1 data row
-    expect(screen.getByText('All')).toBeInTheDocument();
+    expect(screen.getByText('A/B/C')).toBeInTheDocument();
   });
 
   it('displays weight percent for each conductor and triggers handlePopoverOpen', () => {
@@ -176,6 +176,28 @@ describe('ResultsDisplay Component', () => {
     fireEvent.change(screen.getByLabelText(/Load/i), { target: { value: '100' } });
     fireEvent.change(screen.getByLabelText(/Length/i), { target: { value: '1' } });
     fireEvent.click(screen.getByText(/Calc Voltage Drop/i));
-    expect(screen.getByText(/Voltage Drop:/i)).toBeInTheDocument();
+
+    // Check for the voltage drop results table header
+    const voltageDropHeader = screen.getByText(/Voltage Drop \(V\)/i);
+    expect(voltageDropHeader).toBeInTheDocument();
+
+    // Find the voltage drop table by its header, then get its parent TableContainer
+    const voltageDropTable = voltageDropHeader.closest('table');
+    expect(voltageDropTable).toBeInTheDocument();
+
+    // Get all rows in the voltage drop table (excluding header)
+    const rows = voltageDropTable.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(3);
+
+    // Check that each row's first cell is the correct phase label
+    expect(rows[0].querySelector('td').textContent).toBe('A');
+    expect(rows[1].querySelector('td').textContent).toBe('B');
+    expect(rows[2].querySelector('td').textContent).toBe('C');
+
+    // Check for voltage drop values (should be numbers, not '-')
+    for (let i = 0; i < 3; i++) {
+      const valueCell = rows[i].querySelectorAll('td')[1];
+      expect(valueCell.textContent).toMatch(/^[0-9]+\.[0-9]{2}$/);
+    }
   });
 });

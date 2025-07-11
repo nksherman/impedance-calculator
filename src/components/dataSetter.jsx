@@ -97,7 +97,7 @@ function DataSetter({
   };
 
   return (
-    <Paper sx={{ p: 2, mb: 2 }}>
+    <Paper sx={{ p: 2, mb: 2, maxWidth: 400 }}>
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Typography variant="h6" gutterBottom>
           Import/Export Conductor Data
