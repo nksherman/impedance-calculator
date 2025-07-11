@@ -81,7 +81,7 @@ function App() {
   return (
     <Paper className="App" sx={{ p: 4, mx: 2, border: 1 }}>
       <Typography variant="h4" gutterBottom>
-        Geometric Mean Distance Calculator
+        Voltage Drop GMR/GMD Calculator
       </Typography>
       <Box
         sx={{
