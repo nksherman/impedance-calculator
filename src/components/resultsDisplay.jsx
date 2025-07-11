@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, InputAdornment } from '@mui/material';
 
+import ToolTip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import FilledInput from '@mui/material/FilledInput';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-
 
 import Inductance from './math/inductance.jsx';
 import Resistance from './math/resistance.jsx';
@@ -12,80 +15,123 @@ import ResistanceLoop from './math/resistanceLoop.jsx';
 import Capacitance from './math/capacitance.jsx';
 import ReactanceInductance from './math/reactanceInductance.jsx';
 import ReactanceCapacitance from './math/reactanceCapacitance.jsx';
+import KFactor from './math/kFactor.jsx';
+import VoltageDrop from './math/voltageDrop.jsx';
 
-// rlcResults = [{R, L, C},...]  Ohm/{unit} for each conductor arrangement
-
-function arraysEqual(a, b) {
-  if (a.length !== b.length) return false;
-  return a.every((v, i) =>
-    v.R === b[i].R && v.L === b[i].L && v.C === b[i].C
-  );
+function phaseValueEquals(a, b) {
+  return a.R === b.R && a.L === b.L && a.C === b.C;
 }
 
-function calcPhaseValues({ R, L, C }, freq) {
-  const omega = 2 * Math.PI * freq;
-  const Xl = L ? omega * L : 0;
-  const Xc = 0
-  // const Xc = C ? (1 / (omega * C)) : 0;
-  const X = Xl; // ( - Xc)
-  const Z = Math.sqrt(R * R + X * X);
-  const phaseAngle = Math.atan2(X, R);
-  const PF = Math.cos(phaseAngle);
-  return { R, L, Xl, C, Xc, X, Z, phaseAngle, PF };
+function phaseLabels(indices) {
+  return indices.map(idx => String.fromCharCode(65 + idx)).join('/');
 }
 
-function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, handlePopoverOpen }) {
+// Group phases with identical values (non-adjacent supported)
+function groupPhases(phaseValues, conductors) {
+  const groups = [];
+  const used = new Array(phaseValues.length).fill(false);
+
+  for (let i = 0; i < phaseValues.length; i++) {
+    if (used[i]) continue;
+    const indices = [];
+    for (let j = 0; j < phaseValues.length; j++) {
+      if (!used[j] && phaseValueEquals(phaseValues[i], phaseValues[j])) {
+        indices.push(j);
+        used[j] = true;
+      }
+    }
+    groups.push({
+      label: phaseLabels(indices),
+      value: phaseValues[i],
+      conductor: conductors ? conductors[indices[0]] : null,
+      indices,
+    });
+  }
+  return groups;
+}
+
+
+function ResultsDisplay({ rlcResults, conductors, frequency, phaseType, vll, vln, unit, handlePopoverOpen }) {
   const [kva, setKva] = useState('');
   const [length, setLength] = useState('');
-  const [voltageDrop, setVoltageDrop] = useState(null);
+  const [voltageDrops, setVoltageDrops] = useState([]);
+  const [overridePF, setOverridePF] = useState(false);
+  const [customPF, setCustomPF] = useState(0.95);
 
   const lengthLabel = unit === 'mm' ? 'km' : 'kft';
+  const lengthInputLabel = unit === 'mm' ? 'm' : 'ft';
   const factor = unit === 'mm' ? 1000 : 304.8; // per meter to per km/kft
 
-  // Calculate per-phase values
-  const phaseValues = rlcResults.length > 0 ? rlcResults.map(res => calcPhaseValues(res, frequency)) : [];
+  // Calculate phase values for all RLC results, applying PF override if needed
+  function calculatePhaseValuesWithPF(rlcResults, frequency, overridePF, customPF) {
+    return rlcResults.map(({ R, L, C }) => {
+      const omega = 2 * Math.PI * frequency;
+      let Xl = L ? omega * L : 0;
+      let PF, Z, X, Xc, XcReal = 0;
+      if (overridePF) {
+        PF = Math.max(0.01, Math.min(1, customPF)); // Clamp between 0.01 and 1
+        Z = R / PF;
+        // Calculate total X needed for this PF, keeping Xl fixed, so Xc = X - Xl
+        X = Math.sqrt(Math.max(0, Z * Z - R * R));
+        XcReal = C ? 1 / (omega * C) : 0;
+        Xc = -(X - Xl);
+      } else {
+        Xl = L ? omega * L : 0;
+        X = Xl;
+        Z = Math.sqrt(R * R + X * X);
+        PF = R / Z;
+        XcReal = C ? 1 / (omega * C) : 0;
+        Xc = 0;
+      }
+      const phaseAngle = Math.atan2(X, R);
+      return { R, L, Xl, C, Xc, XcReal, X, Z, phaseAngle, PF };
+    });
+  }
 
-  // Check if all phases are the same
-  const allSame = arraysEqual(rlcResults, Array(rlcResults.length).fill(rlcResults[0]));
+  const phaseValues = calculatePhaseValuesWithPF(rlcResults, frequency, overridePF, customPF);
+  const groupedPhases = groupPhases(phaseValues, conductors);
+
 
   // K-Factor calculation
-  const getKFactor = (Z, vbase, phaseCount, PF) => {
-    const kFactorMult = phaseCount === 3 ? Math.sqrt(3) : 1;
-    return Z / (kFactorMult * vbase * PF);
+  const getKFactor = (R, X, vbase, phaseType, PF) => {
+    const kFactorMult = phaseType === "3" ? Math.sqrt(3) : 2;
+
+    const invPF = Math.sin(Math.acos(PF));
+    const nom = R*PF + X*invPF;
+
+    return nom / (kFactorMult * vbase ) * 1000;
   };
 
-  // Voltage drop calculation
-  const handleVoltageDrop = () => {
-    if (!kva || !length) return setVoltageDrop(null);
-    // Use the first phase for calculation if all are the same, else average Z and PF
-    let Z, PF;
-    if (allSame) {
-      Z = phaseValues[0].Z * factor;
-      PF = phaseValues[0].PF;
-    } else {
-      Z = phaseValues.reduce((sum, v) => sum + v.Z * factor, 0) / phaseValues.length;
-      PF = phaseValues.reduce((sum, v) => sum + v.PF, 0) / phaseValues.length;
-    }
-    const phaseCount = rlcResults.length === 3 ? 3 : 1;
-    const vbase = phaseCount === 3 ? vll : vln;
-    // I = (kVA * 1000) / (phaseMult * vbase)
-    const phaseMult = phaseCount === 3 ? Math.sqrt(3) : 1;
-    const I = (parseFloat(kva) * 1000) / (phaseMult * vbase);
-    // Vdrop = I * Z * length
-    const Vdrop = I * Z * parseFloat(length);
-    setVoltageDrop(Vdrop);
-  };
+  // Voltage drop calculation for each phase
+  function handleVoltageDrop() {
+    if (!kva || !length || phaseValues.length === 0) return setVoltageDrops([]);
+    const lengthInUnits = parseFloat(length) / 1000;
+    const vbase = phaseType === "3" ? vll : vln;
+    const phaseMult = phaseType === "3" ? Math.sqrt(3) : 2;
+    const drops = phaseValues.map(val => {
+      const I = (parseFloat(kva)*1000) / (phaseMult * vbase);
+
+      const invPF = Math.sin(Math.acos(val.PF));
+      const Z = val.R * val.PF + val.Xl * invPF;
+      return I * Z * lengthInUnits * factor;
+    });
+    setVoltageDrops(drops);
+
+    const dropK = phaseValues.map(val => {
+      const K = getKFactor(val.R* factor, val.Xl* factor, vbase, phaseType, val.PF);
+      return K * parseFloat(kva) * lengthInUnits;
+    });
+  }
 
   const conductorPropertyLabel = (conductor) => {
     // get the weighted properties, and return a label for it
     if (!conductor) return conductor.name || "No Name";
-
     const properties = conductor.weightedProperties;
     if (!properties || properties.length === 0) return conductor.name;
 
     return (
       <>
-        <Typography>{conductor.name}</Typography>
+        <Typography sx={{maxWidth:120}}>{conductor.name}</Typography>
         {properties.length > 1 ? properties.map((p, idx) => (
           <Typography variant="caption" key={idx} display="block">
             {p.weight_percent.toFixed(2)}% {p.type}
@@ -102,35 +148,56 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>Results</Typography>
+      <Box sx ={{ display: "flex", flexDirection: 'row', alignItems: 'center', mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1, pr: 2 }}>
+          V<sub>Base</sub> {phaseType === "3" ? `${vll}V(3Ph)` : `${vln}V(1Ph)`}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={overridePF}
+                onChange={e => setOverridePF(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Override Power Factor"
+            sx={{ mr: 2 }}
+          />
+          <TextField
+            label="Power Factor"
+            type="number"
+            size="small"
+            variant="filled"
+            value={customPF}
+            onChange={e => setCustomPF(Math.max(0, Math.min(1, parseFloat(e.target.value) || 0)))}
+            inputProps={{ min: 0, max: 1, step: 0.01 }}
+            disabled={!overridePF}
+            sx={{ width: 120 }}
+          />
+        </Box>
+      </Box>
       <TableContainer component={Paper} sx={{ mb: 2 }}>
         <Table size="small">
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ '& > *': { px: 1 } }}>
               <TableCell>Phase</TableCell>
-              <TableCell>
+              <TableCell sx={{ minWidth: '80px'}}>
                 <Typography variant="body2">Size</Typography>
                 <Typography variant="body2">Material</Typography>
               </TableCell>
-              <TableCell align="right">
-                R (Ω/{lengthLabel})
-                <IconButton
-                  size="small"
-                  aria-label="info"
-                  color="primary"
-                  onClick={(e) => handlePopoverOpen(e, <ResistanceLoop />)}
-                >
-                  <InfoOutlinedIcon fontSize="inherit" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  aria-label="info"
-                  color="primary"
-                  onClick={(e) => handlePopoverOpen(e, <Resistance />)}
-                >
-                  <InfoOutlinedIcon fontSize="inherit" />
-                </IconButton>
+              <TableCell align="right" sx={{ minWidth: '100px'}} >
+                  R (Ω/{lengthLabel})
+                  <IconButton
+                    size="small"
+                    aria-label="info"
+                    color="primary"
+                    onClick={(e) => handlePopoverOpen(e, <Resistance />)}
+                  >
+                    <InfoOutlinedIcon fontSize="inherit" />
+                  </IconButton>
               </TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ minWidth: '100px'}}>
                 L (H/{lengthLabel})
                 <IconButton
                   size="small"
@@ -140,8 +207,8 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
                 >
                   <InfoOutlinedIcon fontSize="inherit" />
                 </IconButton>
-              </TableCell>
-              <TableCell align="right">
+              </TableCell>              
+              <TableCell align="right" sx={{ minWidth: '100px'}} >
                 X<sub>L</sub> (Ω/{lengthLabel})
                 <IconButton
                   size="small"
@@ -152,7 +219,7 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
                   <InfoOutlinedIcon fontSize="inherit" />
                 </IconButton>
               </TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ minWidth: '100px'}} >
                 C (F/{lengthLabel})
                 <IconButton
                   size="small"
@@ -163,7 +230,8 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
                   <InfoOutlinedIcon fontSize="inherit" />
                 </IconButton>
               </TableCell>
-              <TableCell align="right">X
+              <TableCell align="right" sx={{ minWidth: '100px'}} >
+                X
                 <sub>C</sub> (Ω/{lengthLabel})
                 <IconButton
                   size="small"
@@ -173,58 +241,63 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
                 >
                   <InfoOutlinedIcon fontSize="inherit" />
                 </IconButton>
-              </TableCell>
-              <TableCell align="right">
+                </TableCell>
+              <TableCell align="right" sx={{ minWidth: '80px'}} >
                 |Z| (Ω/{lengthLabel})
               </TableCell>
-              <TableCell align="right">
-                <Box>
-                  <Typography variant="body2">K-Factor</Typography>
-                  <Typography variant="caption" color="text.secondary">×1000</Typography>
+              <TableCell align="right" sx={{ minWidth: '100px' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                    <Typography variant="body2">K-Factor</Typography>
+                    <Typography variant="caption" color="text.secondary">×1000</Typography>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    aria-label="info"
+                    color="primary"
+                    onClick={(e) => handlePopoverOpen(e, <KFactor />)}
+                    sx={{ ml: 1 }}
+                  >
+                    <InfoOutlinedIcon fontSize="inherit" />
+                  </IconButton>
                 </Box>
               </TableCell>
               <TableCell align="right">PF</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {(rlcResults.length > 0 && phaseValues.length > 0) ? (
-              (allSame ? [phaseValues[0]] : phaseValues).map((val, idx) => {
-                const phaseCount = rlcResults.length === 3 ? 3 : 1;
-                const vbase = phaseCount === 3 ? vll : vln;
-                const kFactor = val?.Z ? getKFactor(val.Z * factor, vbase, phaseCount, val.PF) : 0;
+            {groupedPhases.map((group, idx) => {
+              const vbase = phaseType === "3" ? vll : vln;
+              const kFactor = group.value?.Z ? getKFactor(group.value.R * factor, group.value.Xl * factor, vbase, phaseType, group.value.PF) : 0;
+              const condLabel = conductorPropertyLabel(group.conductor);
 
-                const rowLabel = allSame ? 'All' : String.fromCharCode(65 + idx);
-                const thisCond = conductors ? conductors[idx] : null;
-                const condLabel = conductorPropertyLabel(thisCond);
-
-                return (
-                  <TableRow key={idx}>
-                    <TableCell key={`row-phase-${idx}`}>{rowLabel}</TableCell>
-                    <TableCell key={`row-cond-${idx}`}>
-                      {condLabel ? condLabel : <Typography>-</Typography>}
-                    </TableCell>
-                    <TableCell key={`row-res-${idx}`} align="right">{val?.R ? (val.R * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
-                    <TableCell key={`row-ind-${idx}`} align="right">{val?.L ? val.L.toExponential(4) : <Typography>-</Typography>}</TableCell>
-                    <TableCell key={`row-xl-${idx}`} align="right">{val?.Xl ? (val.Xl * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
-                    <TableCell key={`row-c-${idx}`} align="right">{val?.C ? val.C.toExponential(4) : <Typography>-</Typography>}</TableCell>
-                    <TableCell key={`row-xc-${idx}`} align="right">- - -</TableCell> {/* val?.Xc ? (val.Xc * factor).toFixed(4) : <Typography>-</Typography> not calculated in this example */}
-                    <TableCell key={`row-z-${idx}`} align="right">{val?.Z ? (val.Z * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
-                    <TableCell key={`row-kf-${idx}`} align="right">{kFactor ? (kFactor * 1000).toFixed(5) : <Typography>-</Typography>}</TableCell>
-                    <TableCell key={`row-pf-${idx}`} align="right">{val?.PF ? val.PF.toFixed(4) : <Typography>-</Typography>}</TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow key="no-results">
-                <TableCell colSpan={11} align="center">—</TableCell>
-              </TableRow>
-            )}
+              return (
+                <TableRow key={idx}>
+                  <TableCell>{group.label}</TableCell>
+                  <TableCell>
+                    {condLabel ? condLabel : <Typography>-</Typography>}
+                  </TableCell>
+                  <TableCell align="right">{group.value?.R ? (group.value.R * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
+                  <TableCell align="right">{group.value?.L ? group.value.L.toExponential(4) : <Typography>-</Typography>}</TableCell>
+                  <TableCell align="right">{group.value?.Xl ? (group.value.Xl * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
+                  <TableCell align="right">{group.value?.C ? group.value.C.toExponential(4) : <Typography>-</Typography>}</TableCell>
+                  <TableCell align="right">
+                    <ToolTip title={`Xc Calc: ${group.value?.XcReal ? (group.value.XcReal * factor).toExponential(2) : 'N/A'}`}>
+                      {group.value?.Xc ? (group.value.Xc * factor).toFixed(4) : <Typography>-</Typography>}
+                    </ToolTip>
+                  </TableCell>
+                  <TableCell align="right">{group.value?.Z ? (group.value.Z * factor).toFixed(4) : <Typography>-</Typography>}</TableCell>
+                  <TableCell align="right">{kFactor ? (kFactor).toFixed(5) : <Typography>-</Typography>}</TableCell>
+                  <TableCell align="right">{group.value?.PF ? group.value.PF.toFixed(4) : <Typography>-</Typography>}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
+        <FilledInput
           label="Load (kVA)"
           value={kva}
           onChange={e => setKva(e.target.value)}
@@ -236,13 +309,13 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
           }}
         />
         <TextField
-          label={`Length (${lengthLabel})`}
+          label={`Length (${lengthInputLabel})`}
           value={length}
           onChange={e => setLength(e.target.value)}
           type="number"
           size="small"
           InputProps={{
-            endAdornment: <InputAdornment position="end">{lengthLabel}</InputAdornment>,
+            endAdornment: <InputAdornment position="end">{lengthInputLabel}</InputAdornment>,
             inputProps: { min: 0 }
           }}
         />
@@ -256,10 +329,35 @@ function ResultsDisplay({ rlcResults, conductors, frequency, vll, vln, unit, han
           </Typography>
         </Box>
       </Box>
-      {voltageDrop !== null && (
-        <Typography variant="subtitle1" color="secondary">
-          Voltage Drop: {voltageDrop.toFixed(2)} V
-        </Typography>
+      {voltageDrops.length > 0 && (
+        <TableContainer component={Paper} sx={{ mb: 2, maxWidth: 400 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Phase</TableCell>
+                <TableCell align="right">
+                  Voltage Drop (V)
+                  <IconButton
+                    size="small"
+                    aria-label="info"
+                    color="primary"
+                    onClick={(e) => handlePopoverOpen(e, <VoltageDrop />)}
+                  >
+                    <InfoOutlinedIcon fontSize="inherit" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {voltageDrops.map((drop, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>{String.fromCharCode(65 + idx)}</TableCell>
+                  <TableCell align="right">{drop.toFixed(2)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
     </Box>
   );

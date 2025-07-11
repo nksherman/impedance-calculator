@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
@@ -37,12 +37,11 @@ function App() {
   const [temperature, setTemperature] = useState(40); // Default temperature in Celsius
   const [vll, setVll] = useState(240); // Line-to-line voltage in volts
   const [vln, setVln] = useState(120);
+  const [phaseType, setPhaseType] = useState('3');
 
   // const [sunIntensity, setSunIntensity] = useState(800); // W/m², typical sunny day
   // const [appliedVoltage, setAppliedVoltage] = useState(120); // V
   // const [convHeatTransfer, setConvHeatTransfer] = useState(25); // W/m²K, typical for air
-
-  const [neutralResistance, setNeutralResistance] = useState(0); // ohms per km
 
   const [gmd, setGmd] = useState(0); // mm 
   const [rlcResults, setRlcResults] = useState([]);
@@ -50,7 +49,14 @@ function App() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [popoverContent, setPopoverContent] = useState(null);
 
-  // Remove the old calculateRLC and replace with a wrapper that uses the external calculator
+  useEffect(() => {
+    if (conductorArrangements.length >= 3 ) {
+      setPhaseType('3');
+    } else {
+      setPhaseType('1');
+    }
+  }, [conductorArrangements]);
+
   const calculateRLC = (gmd_mm, frequency) => {
     const { rlcResults, rpk, totalXlpk, totalXcpk, neutralResistance } = calculateRLCExternal(
       frequency,
@@ -200,8 +206,37 @@ function App() {
                 Invalid temperature
               </Typography>
             )}
+          </Box>
+          <Box label="voltage-input" sx={{ mt: 2 }}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              Voltage Inputs:
+            </Typography>
+            <FilledInput
+              value={vll}
+              onChange={e => setVll(Number(e.target.value))}
+              endAdornment={<InputAdornment position="end">V LL</InputAdornment>}
+              sx={{ mb: 2, width: 180 }}
+              inputProps={{
+                'aria-label': 'voltage-ll',
+                type: 'number',
+                min: 0,
+                step: 1,
+              }}
+            />
+            <FilledInput
+              value={vln}
+              onChange={e => setVln(Number(e.target.value))}
+              endAdornment={<InputAdornment position="end">V LN</InputAdornment>}
+              sx={{ mb: 2, width: 180 }}
+              inputProps={{
+                'aria-label': 'voltage-ln',
+                type: 'number',
+                min: 0,
+                step: 1,
+              }}
+            />
             <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-              Reference temperature: 25°C
+              Phase Type: {phaseType === '3' ? 'Three Phase' : phaseType === '1' ? 'Single Phase' : 'Other'}
             </Typography>
           </Box>
         </Paper>
@@ -226,6 +261,7 @@ function App() {
             rlcResults={rlcResults}
             conductors={conductorArrangements}
             frequency={frequency}
+            phaseType={phaseType}
             vll={vll}
             vln={vln}
             unit={unit}
